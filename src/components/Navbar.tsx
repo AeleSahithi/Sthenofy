@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Menu, X, Dumbbell } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import sthenofyLogo from '@/assets/sthenofy-logo-white.png';
 
 export type PageId = 'home' | 'packages' | 'classes' | 'trainers' | 'gallery' | 'blog' | 'contact';
 
@@ -50,18 +51,18 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
         }`}
       >
         <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
-          {/* Logo */}
+          {/*  Logo */}
           <button
-            onClick={() => handleNav('home')}
-            className="flex items-center gap-2 group shrink-0 z-[70] relative"
+          onClick={() => handleNav('home')}
+          className="flex items-center shrink-0 z-[70] relative group"
+          aria-label="Sthenofy Home"
           >
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gold-400 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-              <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-ink-950" strokeWidth={2.5} />
-            </div>
-            <span className="font-display text-xl sm:text-2xl tracking-wider">
-              STHENO<span className="text-gold-400">FY</span>
-            </span>
-          </button>
+          <img
+           src={sthenofyLogo}
+           alt="Sthenofy"
+           className="h-15 sm:h-12 w-32 sm:w-36 object-contain transition-transform duration-300 group-hover:scale-105" 
+          />
+       </button>
 
           {/* Desktop nav */}
           <ul className="hidden lg:flex items-center gap-1">
@@ -69,7 +70,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               <li key={item.id}>
                 <button
                   onClick={() => handleNav(item.id)}
-                  className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
+                  className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group {
                     currentPage === item.id ? 'text-gold-400' : 'text-ink-100 hover:text-gold-400'
                   }`}
                 >

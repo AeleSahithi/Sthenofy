@@ -9,7 +9,7 @@ interface PackagesPageProps {
 const plans = [
   {
     name: 'Starter',
-    price: 29,
+    price: 999,
     period: '/month',
     icon: Zap,
     tagline: 'Perfect to begin your journey',
@@ -27,7 +27,7 @@ const plans = [
   },
   {
     name: 'Athlete',
-    price: 59,
+    price: 599,
     period: '/month',
     icon: Star,
     tagline: 'Our most popular membership',
@@ -64,10 +64,10 @@ const plans = [
 ];
 
 const addons = [
-  { name: 'Personal Training (1-on-1)', price: '$45', desc: '60-minute session with a certified trainer' },
-  { name: 'Nutrition Coaching', price: '$120', desc: 'Monthly personalized meal plan & check-ins' },
-  { name: 'Recovery Session', price: '$35', desc: 'Sauna, ice bath, and sports massage combo' },
-  { name: 'Body Composition Scan', price: '$25', desc: 'InBody analysis with detailed report' },
+  { name: 'Personal Training (1-on-1)', price: '₹4500', desc: '60-minute session with a certified trainer' },
+  { name: 'Nutrition Coaching', price: '₹1200', desc: 'Monthly personalized meal plan & check-ins' },
+  { name: 'Recovery Session', price: '₹3500', desc: 'Sauna, ice bath, and sports massage combo' },
+  { name: 'Body Composition Scan', price: '₹2500', desc: 'InBody analysis with detailed report' },
 ];
 
 export default function PackagesPage({ onNavigate }: PackagesPageProps) {
@@ -97,7 +97,7 @@ export default function PackagesPage({ onNavigate }: PackagesPageProps) {
           <div className="inline-flex items-center gap-1 glass rounded-full p-1 mb-4">
             <button
               onClick={() => setBilling('monthly')}
-              className={`px-6 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all ${
+              className={`px-6 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all ₹{
                 billing === 'monthly' ? 'bg-gold-400 text-ink-950' : 'text-ink-300'
               }`}
             >
@@ -105,7 +105,7 @@ export default function PackagesPage({ onNavigate }: PackagesPageProps) {
             </button>
             <button
               onClick={() => setBilling('annual')}
-              className={`px-6 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all ${
+              className={`px-6 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all ₹{
                 billing === 'annual' ? 'bg-gold-400 text-ink-950' : 'text-ink-300'
               }`}
             >
@@ -137,7 +137,7 @@ export default function PackagesPage({ onNavigate }: PackagesPageProps) {
                       </span>
                     </div>
                   )}
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ₹{
                     plan.highlighted ? 'bg-gold-400' : 'bg-gold-400/10'
                   }`}>
                     <plan.icon className={`w-7 h-7 ${plan.highlighted ? 'text-ink-950' : 'text-gold-400'}`} />
@@ -145,7 +145,7 @@ export default function PackagesPage({ onNavigate }: PackagesPageProps) {
                   <h3 className="font-display text-3xl uppercase tracking-wide mb-1">{plan.name}</h3>
                   <p className="text-ink-300 text-sm mb-6">{plan.tagline}</p>
                   <div className="flex items-end gap-1 mb-6">
-                    <span className="font-display text-5xl text-gold-400">${price}</span>
+                    <span className="font-display text-5xl text-gold-400">₹{price}</span>
                     <span className="text-ink-400 text-sm mb-2">{plan.period}</span>
                   </div>
                   <ul className="space-y-3 mb-8">

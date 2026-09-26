@@ -16,9 +16,6 @@ export default function Footer({ onNavigate }: FooterProps) {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-lg bg-gold-400 flex items-center justify-center">
-                <Dumbbell className="w-6 h-6 text-ink-950" strokeWidth={2.5} />
-              </div>
               <span className="font-display text-2xl tracking-wider">
                 STHENO<span className="text-gold-400">FY</span>
               </span>
