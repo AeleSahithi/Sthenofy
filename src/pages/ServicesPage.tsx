@@ -6,7 +6,7 @@ interface ClassesPageProps {
   onNavigate: (page: PageId) => void;
 }
 
-const classCategories = ['All', 'Strength', 'Cardio', 'Mind & Body', 'Combat'];
+const classCategories = ['All', 'Strength', 'Performance'];
 
 const classes = [
   { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Nutrition support to help you fuel your training, recover well, and stay consistent.', duration: '60 min', level: 'Intermediate', capacity: 12, img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 6:00pm' },
