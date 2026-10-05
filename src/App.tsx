@@ -3,11 +3,11 @@ import Navbar, { type PageId } from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import HomePage from '@/pages/HomePage';
 import PackagesPage from '@/pages/PackagesPage';
-import ClassesPage from '@/pages/ClassesPage';
 import TrainersPage from '@/pages/TrainersPage';
 import GalleryPage from '@/pages/GalleryPage';
 import BlogPage from '@/pages/BlogPage';
 import ContactPage from '@/pages/ContactPage';
+import ServicesPage from '@/pages/ServicesPage';
 
 export default function App() {
   const [page, setPage] = useState<PageId>('home');
@@ -24,7 +24,7 @@ export default function App() {
     switch (page) {
       case 'home': return <HomePage onNavigate={handleNavigate} />;
       case 'packages': return <PackagesPage onNavigate={handleNavigate} />;
-      case 'classes': return <ClassesPage onNavigate={handleNavigate} />;
+      case 'services': return <ServicesPage onNavigate={handleNavigate} />;
       case 'trainers': return <TrainersPage onNavigate={handleNavigate} />;
       case 'gallery': return <GalleryPage />;
       case 'blog': return <BlogPage />;

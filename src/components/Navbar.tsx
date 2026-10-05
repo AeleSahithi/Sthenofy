@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import sthenofyLogo from '@/assets/sthenofy-logo-white.png';
+import sthenofyLogo from '@/assets/sthenofy-logo-black.png';
 
-export type PageId = 'home' | 'packages' | 'classes' | 'trainers' | 'gallery' | 'blog' | 'contact';
+export type PageId = 'home' | 'packages' | 'services' | 'trainers' | 'gallery' | 'blog' | 'contact';
 
 interface NavbarProps {
   currentPage: PageId;
@@ -11,8 +11,8 @@ interface NavbarProps {
 
 const navItems: { id: PageId; label: string }[] = [
   { id: 'home', label: 'Home' },
-  { id: 'packages', label: 'Packages' },
-  { id: 'classes', label: 'Classes' },
+  //{ id: 'packages', label: 'Packages' },
+  { id: 'services', label: 'Services' },
   { id: 'trainers', label: 'Trainers' },
   { id: 'gallery', label: 'Gallery' },
   { id: 'blog', label: 'Blog' },

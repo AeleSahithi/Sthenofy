@@ -17,23 +17,42 @@ export default function Footer({ onNavigate }: FooterProps) {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <span className="font-display text-2xl tracking-wider">
-                STHENO<span className="text-gold-400">FY</span>
+                STHENO<span className="text-gold-500">FY</span>
               </span>
             </div>
             <p className="text-ink-300 text-sm leading-relaxed mb-6">
               Train beyond limits. A premium fitness studio built for those who refuse to settle.
             </p>
             <div className="flex gap-3">
-              {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  className="w-10 h-10 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-400 hover:border-gold-400/30 transition-all duration-300"
-                >
-                  <Icon className="w-4 h-4" />
-                </a>
-              ))}
-            </div>
+  <a
+    href="https://www.instagram.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-10 h-10 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-500 hover:border-gold-500/30 transition-all duration-300"
+  >
+    <Instagram className="w-4 h-4" />
+  </a>
+
+
+  <a
+    href="https://twitter.com/"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-10 h-10 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-500 hover:border-gold-500/30 transition-all duration-300"
+  >
+    <Twitter className="w-4 h-4" />
+  </a>
+
+  <a
+    href="https://www.youtube.com/@Sthenofy"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-10 h-10 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-400 hover:border-gold-400/30 transition-all duration-300"
+  >
+    <Youtube className="w-4 h-4" />
+  </a>
+</div>
+           
           </div>
 
           {/* Quick links */}
@@ -43,7 +62,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               {[
                 { id: 'home' as PageId, label: 'Home' },
                 { id: 'packages' as PageId, label: 'Packages' },
-                { id: 'classes' as PageId, label: 'Classes' },
+                { id: 'services' as PageId, label: 'Services' },
                 { id: 'trainers' as PageId, label: 'Trainers' },
                 { id: 'gallery' as PageId, label: 'Gallery' },
                 { id: 'blog' as PageId, label: 'Blog' },
@@ -66,15 +85,19 @@ export default function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-4">
               <li className="flex items-start gap-3 text-ink-300 text-sm">
                 <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
-                <span>123 Forge Street, Downtown District, Metro City 10001</span>
+                <span>H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage, Bengaluru, 560076.1</span>
+              </li>
+              <li className="flex items-start gap-3 text-ink-300 text-sm">
+                <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
+                <span>Plot no 28/1, sy no 167, Krishnapuram colony, Mailardevpally, Hyderabad - 500005</span>
               </li>
               <li className="flex items-center gap-3 text-ink-300 text-sm">
                 <Phone className="w-4 h-4 text-gold-400 shrink-0" />
-                <span>+1 (555) 234-7890</span>
+                <span>+91 90356 54943</span>
               </li>
               <li className="flex items-center gap-3 text-ink-300 text-sm">
                 <Mail className="w-4 h-4 text-gold-400 shrink-0" />
-                <span>hello@sthenofy.com</span>
+                <span>support@sthenofy.com</span>
               </li>
             </ul>
           </div>

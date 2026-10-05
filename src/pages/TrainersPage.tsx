@@ -7,7 +7,9 @@ interface TrainersPageProps {
 
 const trainers = [
   { name: 'Bharath Namadari', specialty: 'Head Strength Coach', exp: '12 years', certs: ['NSCA-CSCS', 'USAW Level 2'], bio: 'Former national powerlifting champion. Marcus has coached over 300 competitive lifters and specializes in raw strength development.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Bharath Namadari', specialty: 'Yoga & Mobility', exp: '8 years', certs: ['RYT-500', 'FRC Mobility Specialist'], bio: 'Doctor of Physical Therapy turned yoga instructor. Sarah blends clinical knowledge with mindful movement for lasting results.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Vamshi Krishna Nandimalla', specialty: 'Yoga & Mobility', exp: '8 years', certs: ['RYT-500', 'FRC Mobility Specialist'], bio: 'Doctor of Physical Therapy turned yoga instructor. Sarah blends clinical knowledge with mindful movement for lasting results.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Akshata Chavan', specialty: 'Akshata Chavan', exp: '8 years', certs: ['RYT-500', 'FRC Mobility Specialist'], bio: 'Doctor of Physical Therapy turned yoga instructor. Sarah blends clinical knowledge with mindful movement for lasting results.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+
 ];
 
 export default function TrainersPage({ onNavigate }: TrainersPageProps) {

@@ -9,14 +9,12 @@ interface ClassesPageProps {
 const classCategories = ['All', 'Strength', 'Cardio', 'Mind & Body', 'Combat'];
 
 const classes = [
-  { name: 'Power Lifting', category: 'Strength', desc: 'Build raw strength with squats, deadlifts, and bench press.', duration: '60 min', level: 'Intermediate', capacity: 12, img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 6:00pm' },
-  { name: 'HIIT Inferno', category: 'Cardio', desc: 'High-intensity intervals that torch calories and build endurance.', duration: '45 min', level: 'All Levels', capacity: 20, img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 7:00am & 6:00pm' },
-  { name: 'Spin Cycle', category: 'Cardio', desc: 'Heart-pumping indoor cycling with music-driven intervals.', duration: '45 min', level: 'All Levels', capacity: 25, img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon — Fri — 6:00am' },
-  { name: 'Vinyasa Flow', category: 'Mind & Body', desc: 'Dynamic yoga linking breath to movement for flexibility and calm.', duration: '60 min', level: 'All Levels', capacity: 15, img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu, Sat — 8:00am' },
-  { name: 'Boxing Fundamentals', category: 'Combat', desc: 'Learn proper technique while building power and agility.', duration: '60 min', level: 'Beginner', capacity: 16, img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed — 7:00pm' },
-  { name: 'Olympic Lifting', category: 'Strength', desc: 'Master the snatch and clean & jerk with expert coaching.', duration: '75 min', level: 'Advanced', capacity: 8, img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 6:00pm' },
-  { name: 'Pilates Core', category: 'Mind & Body', desc: 'Strengthen your core and improve posture with controlled movements.', duration: '50 min', level: 'All Levels', capacity: 18, img: 'https://images.pexels.com/photos/25596885/pexels-photo-25596885.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 9:00am' },
-  { name: 'Muay Thai', category: 'Combat', desc: 'The art of eight limbs. Build striking power and conditioning.', duration: '60 min', level: 'Intermediate', capacity: 14, img: 'https://images.pexels.com/photos/6390227/pexels-photo-6390227.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu, Sat — 7:00pm' },
+  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Nutrition support to help you fuel your training, recover well, and stay consistent.', duration: '60 min', level: 'Intermediate', capacity: 12, img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 6:00pm' },
+  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Simple, practical food guidance to help you make better everyday choices and manage your nutrition.', duration: '45 min', level: 'All Levels', capacity: 20, img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 7:00am & 6:00pm' },
+  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized nutrition support to help you build healthier eating habits and feel better day to day.', duration: '45 min', level: 'All Levels', capacity: 25, img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon — Fri — 6:00am' },
+  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'A practical approach to eating better, staying consistent, and working towards healthy fat loss.', duration: '60 min', level: 'All Levels', capacity: 15, img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu, Sat — 8:00am' },
+  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support to help you navigate changes in your body through every stage.', duration: '60 min', level: 'Beginner', capacity: 16, img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed — 7:00pm' },
+  { name: 'Online Training Program', category: 'Strength', desc: 'Train from wherever you are with a structured workout plan and guidance to keep you on track.', duration: '75 min', level: 'Advanced', capacity: 8, img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 6:00pm' },
 ];
 
 const weeklySchedule = [
@@ -83,7 +81,7 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
               <div key={i} className="card-hover group glass rounded-2xl overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
                   <img src={cls.img} alt={cls.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink-950 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-850 to-transparent" />
                   <div className="absolute top-3 left-3">
                     <span className="glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">{cls.category}</span>
                   </div>
