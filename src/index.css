@@ -116,6 +116,31 @@
   height: 3px;
 }
 
+.testimonials-scroll {
+  touch-action: pan-x;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 204, 0, 0.35) transparent;
+}
+
+.testimonials-track {
+  animation: testimonialsMarquee 52s linear infinite;
+  will-change: transform;
+}
+
+.testimonials-scroll:hover .testimonials-track,
+.testimonials-scroll.is-paused .testimonials-track {
+  animation-play-state: paused;
+}
+
+@keyframes testimonialsMarquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(-50% - 0.75rem));
+  }
+}
+
 .testimonials-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
@@ -127,4 +152,10 @@
 
 .testimonials-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 204, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonials-track {
+    animation: none;
+  }
 }

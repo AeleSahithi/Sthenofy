@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import sthenofyLogo from '@/assets/sthenofy-logo-black.png';
 
-export type PageId = 'home' | 'packages' | 'services' | 'trainers' | 'gallery' | 'blog' | 'contact';
+export type PageId = 'home' | 'packages' | 'services' | 'trainers' | 'gallery' | 'blog' | 'contact' | 'privacy' | 'terms' | 'refund';
 
 interface NavbarProps {
   currentPage: PageId;
@@ -60,7 +60,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <img
            src={sthenofyLogo}
            alt="Sthenofy"
-           className="h-15 sm:h-12 w-32 sm:w-36 object-contain transition-transform duration-300 group-hover:scale-105" 
+           className="h-16 sm:h-14 w-36 sm:w-40 object-contain transition-transform duration-300 group-hover:scale-105" 
           />
        </button>
 

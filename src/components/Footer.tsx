@@ -1,4 +1,4 @@
-import { Dumbbell, Instagram, Facebook, Twitter, Youtube, MapPin, Phone, Mail } from 'lucide-react';
+import { Instagram, Twitter, Youtube, MapPin, Phone, Mail } from 'lucide-react';
 import type { PageId } from './Navbar';
 
 interface FooterProps {
@@ -16,7 +16,7 @@ export default function Footer({ onNavigate }: FooterProps) {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-display text-2xl tracking-wider">
+              <span className="font-display text-3xl tracking-wider">
                 STHENO<span className="text-gold-500">FY</span>
               </span>
             </div>
@@ -118,10 +118,10 @@ export default function Footer({ onNavigate }: FooterProps) {
           <p className="text-ink-400 text-xs">
             © {new Date().getFullYear()} STHENOFY. All rights reserved.
           </p>
-          <div className="flex gap-6 text-ink-400 text-xs">
-            <a href="#" className="hover:text-gold-400 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-gold-400 transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-gold-400 transition-colors">Cookie Policy</a>
+          <div className="flex flex-wrap justify-center gap-6 text-ink-400 text-xs">
+            <button onClick={() => onNavigate('privacy')} className="hover:text-gold-400 transition-colors">Privacy Policy</button>
+            <button onClick={() => onNavigate('terms')} className="hover:text-gold-400 transition-colors">Terms of Service</button>
+            <button onClick={() => onNavigate('refund')} className="hover:text-gold-400 transition-colors">Refund Policy</button>
           </div>
         </div>
       </div>

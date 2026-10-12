@@ -60,6 +60,40 @@ export default function GalleryPage() {
         </div>
       </section>
 
+      {/* About */}
+      <section className="pb-16 sm:pb-20 lg:pb-24">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-14 items-center glass rounded-2xl p-5 sm:p-8 lg:p-10">
+            <div className="relative overflow-hidden rounded-xl aspect-[4/3]">
+              <img
+                src={galleryImages[0].url}
+                alt="Athlete training at STHENOFY"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/70 via-transparent to-transparent" />
+              <span className="absolute bottom-4 left-4 glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">
+                Built for progress
+              </span>
+            </div>
+            <div>
+              <div className="section-label mb-4">
+                <ZoomIn className="w-4 h-4" />
+                <span>About STHENOFY</span>
+              </div>
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-5">
+                A SPACE THAT <span className="text-gold-400">MOVES YOU</span>
+              </h2>
+              <p className="text-ink-200 leading-relaxed mb-4">
+                STHENOFY is more than a place to work out. It is a focused training environment where every detail is designed to help you build strength, confidence, and consistency.
+              </p>
+              <p className="text-ink-300 leading-relaxed">
+                Explore the space, the equipment, and the energy that make every session an opportunity to go further.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Gallery grid */}
       <section className="pb-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">

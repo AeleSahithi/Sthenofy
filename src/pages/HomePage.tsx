@@ -23,15 +23,35 @@ const stats = [
   { value: 4, suffix: 'y', label: 'Years Strong' },
 ];
 
-const testimonials = [
-  { name: 'Marcus T.', role: 'Member since 2021', text: 'Lost 40 pounds in 6 months. The trainers actually care and the community pushes you every single day.', img: 'https://images.pexels.com/photos/13885345/pexels-photo-13885345.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Sarah K.', role: 'Member since 2022', text: 'Best gym I have ever joined. The classes are incredible and the equipment is always in perfect condition.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'James L.', role: 'Member since 2020', text: 'The 24/7 access changed everything for me. I can train at 4am before work and never wait for equipment.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'James L.', role: 'Member since 2020', text: 'The 24/7 access changed everything for me. I can train at 4am before work and never wait for equipment.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'James L.', role: 'Member since 2020', text: 'The 24/7 access changed everything for me. I can train at 4am before work and never wait for equipment.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+interface VideoTestimonial {
+  name: string;
+  subtitle?: string;
+  youtubeUrl: string;
+}
 
-
+const videoTestimonials: VideoTestimonial[] = [
+  // Placeholder entries — replace these URLs and names with real client testimonials.
+  { name: 'Placeholder Client 1', subtitle: 'Replace with a real member story', youtubeUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
+  { name: 'Placeholder Client 2', subtitle: 'Replace with a real fitness journey', youtubeUrl: 'https://youtu.be/M7lc1UVf-VE' },
+  { name: 'Placeholder Client 3', subtitle: 'Replace with a real STHENOFY experience', youtubeUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
 ];
+
+function getYouTubeVideoId(url: string): string | null {
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname === 'youtu.be') {
+      return parsedUrl.pathname.slice(1).split('/')[0] || null;
+    }
+    if (parsedUrl.hostname.includes('youtube.com')) {
+      if (parsedUrl.pathname === '/watch') return parsedUrl.searchParams.get('v');
+      if (parsedUrl.pathname.startsWith('/shorts/')) return parsedUrl.pathname.split('/')[2] || null;
+      if (parsedUrl.pathname.startsWith('/embed/')) return parsedUrl.pathname.split('/')[2] || null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
 
 function Counter({ value, suffix }: { value: number; suffix: string }) {
   const [count, setCount] = useState(0);
@@ -73,6 +93,9 @@ function Counter({ value, suffix }: { value: number; suffix: string }) {
 }
 
 export default function HomePage({ onNavigate }: HomePageProps) {
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
+  const testimonialLoop = [...videoTestimonials, ...videoTestimonials];
+
   return (
     <div className="noise-overlay">
       {/* HERO */}
@@ -93,19 +116,19 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="space-y-5 sm:space-y-6 animate-fade-up">
             <div className="section-label">
               <Zap className="w-4 h-4" />
-              <span>Premium Fitness Studio</span>
+              <span>Personal training and nutrition</span>
             </div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight">
-              TRAIN<br />
               BEYOND<br />
-              <span className="text-gold-400">LIMITS</span>
+              FITNESS<br />
+              <span className="text-gold-400">INTO PERFORMANCE</span>
             </h1>
             <p className="text-ink-200 text-base sm:text-lg md:text-xl max-w-md leading-relaxed">
-              Personalized fitness training and evidence-based nutrition, built around your body, your goals, and your lifestyle.
+              Personalized training, strength, and nutrition coaching in Hyderabad and Bangalore - built around your individual goals. 
             </p>
             <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
               <button onClick={() => onNavigate('packages')} className="btn-gold text-xs sm:text-sm">
-                Start Training
+                Start your journey
                 <ArrowRight className="w-4 h-4" />
               </button>
               <button onClick={() => onNavigate('services')} className="btn-outline text-xs sm:text-sm">
@@ -143,7 +166,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         <div className="flex animate-marquee whitespace-nowrap">
           {Array.from({ length: 2 }).map((_, dup) => (
             <div key={dup} className="flex items-center gap-8 sm:gap-12 px-4 sm:px-6">
-              {['STRENGTH', 'DISCIPLINE', 'POWER', 'ENDURANCE', 'COMMUNITY', 'RESULTS'].map((word, i) => (
+              {['STRENGTH', 'CONFIDENCE', ' PERFORMANCE', 'DISCIPLINE', 'ENDURANCE'].map((word, i) => (
                 <span key={`${dup}-${i}`} className="flex items-center gap-8 sm:gap-12">
                   <span className="font-display text-2xl sm:text-3xl md:text-4xl text-ink-50/20 tracking-widest">{word}</span>
                   <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-gold-500/30" />
@@ -251,28 +274,53 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <span>Member Stories</span>
             </div>
             <h2 className="font-display text-3xl sm:text-4xl md:text-6xl tracking-tight">
-              REAL PEOPLE, <span className="text-gold-400">REAL RESULTS</span>
+              REAL STORIES, <span className="text-gold-400">REAL PROGRESS</span>
             </h2>
           </div>
-         
-         <div className="testimonials-scroll flex gap-6 overflow-x-auto pb-6 snap-x snap-mandatory">
-            {testimonials.map((t, i) => (
-              <div key={i} className="glass rounded-2xl p-6 sm:p-8 card-hover w-[85%] sm:w-[55%] lg:w-[32%] min-w-[85%] sm:min-w-[55%] lg:min-w-[32%] h-[280px] sm:h-[300px] flex-shrink-0 snap-start">
-                <div className="flex items-center gap-4 mb-6">                                              
-                  <img src={t.img} alt={t.name} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover border-2 border-gold-400/30" />
-                  <div>
-                    <div className="font-bold text-ink-50">{t.name}</div>
-                    <div className="text-ink-400 text-xs">{t.role}</div>
-                  </div>
-                </div>
-                <p className="text-ink-200 leading-relaxed italic">"{t.text}"</p>
-                <div className="flex gap-1 mt-4">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <span key={j} className="text-gold-400 text-sm">★</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+
+          <div
+            className={`testimonials-scroll overflow-x-auto pb-6 ${isTestimonialsPaused ? 'is-paused' : ''}`}
+            onMouseEnter={() => setIsTestimonialsPaused(true)}
+            onMouseLeave={() => setIsTestimonialsPaused(false)}
+            onTouchStart={() => setIsTestimonialsPaused(true)}
+            onTouchEnd={() => setIsTestimonialsPaused(false)}
+          >
+            <div className="testimonials-track flex w-max gap-4 sm:gap-6">
+              {testimonialLoop.map((testimonial, index) => {
+                const videoId = getYouTubeVideoId(testimonial.youtubeUrl);
+                return (
+                  <article
+                    key={`${testimonial.name}-${index}`}
+                    className="glass rounded-2xl p-4 sm:p-5 card-hover w-[calc(100vw-2.5rem)] sm:w-[min(520px,70vw)] lg:w-[min(430px,32vw)] flex-shrink-0"
+                  >
+                    <div className="mb-4">
+                      <h3 className="font-display text-xl sm:text-2xl uppercase tracking-wide text-ink-50">
+                        {testimonial.name}
+                      </h3>
+                      {testimonial.subtitle && (
+                        <p className="text-ink-400 text-xs sm:text-sm mt-1">{testimonial.subtitle}</p>
+                      )}
+                    </div>
+                    <div className="relative aspect-video overflow-hidden rounded-xl border border-ink-50/10 bg-ink-900">
+                      {videoId ? (
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
+                          title={`${testimonial.name} video testimonial`}
+                          loading="lazy"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                          className="absolute inset-0 h-full w-full"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-400">
+                          Add a valid YouTube testimonial URL to display this video.
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>

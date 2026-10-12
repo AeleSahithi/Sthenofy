@@ -8,6 +8,7 @@ import GalleryPage from '@/pages/GalleryPage';
 import BlogPage from '@/pages/BlogPage';
 import ContactPage from '@/pages/ContactPage';
 import ServicesPage from '@/pages/ServicesPage';
+import LegalPage from '@/pages/LegalPage';
 
 export default function App() {
   const [page, setPage] = useState<PageId>('home');
@@ -29,6 +30,9 @@ export default function App() {
       case 'gallery': return <GalleryPage />;
       case 'blog': return <BlogPage />;
       case 'contact': return <ContactPage />;
+      case 'privacy': return <LegalPage type="privacy" />;
+      case 'terms': return <LegalPage type="terms" />;
+      case 'refund': return <LegalPage type="refund" />;
       default: return <HomePage onNavigate={handleNavigate} />;
     }
   };
