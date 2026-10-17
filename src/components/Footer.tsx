@@ -64,7 +64,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 { id: 'packages' as PageId, label: 'Packages' },
                 { id: 'services' as PageId, label: 'Services' },
                 { id: 'trainers' as PageId, label: 'Trainers' },
-                { id: 'gallery' as PageId, label: 'Gallery' },
+                { id: 'gallery' as PageId, label: 'About Us' },
                 { id: 'blog' as PageId, label: 'Blog' },
               ].map((link) => (
                 <li key={link.id}>
@@ -102,14 +102,14 @@ export default function Footer({ onNavigate }: FooterProps) {
             </ul>
           </div>
 
-          {/* Hours */}
+          {/* Why Sthenofy */}
           <div>
-            <h4 className="font-display text-lg uppercase tracking-wider mb-4 text-ink-50">Hours</h4>
+            <h4 className="font-display text-lg uppercase tracking-wider mb-4 text-ink-50">Why Sthenofy</h4>
             <ul className="space-y-2 text-ink-300 text-sm">
-              <li className="flex justify-between"><span>Mon – Fri</span><span className="text-ink-100">5am – 11pm</span></li>
-              <li className="flex justify-between"><span>Saturday</span><span className="text-ink-100">6am – 10pm</span></li>
-              <li className="flex justify-between"><span>Sunday</span><span className="text-ink-100">7am – 8pm</span></li>
-              <li className="flex justify-between border-t border-ink-50/10 pt-2 mt-2"><span className="text-gold-400 font-semibold">Members</span><span className="text-gold-400 font-semibold">24/7 Access</span></li>
+              <li>Personalised Training</li>
+              <li>Flexible Sessions</li>
+              <li>Goal-Oriented Programs</li>
+              <li className="border-t border-ink-50/10 pt-2 mt-2 text-gold-400 font-semibold">Your Fitness, Your Pace</li>
             </ul>
           </div>
         </div>

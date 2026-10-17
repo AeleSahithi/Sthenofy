@@ -1,9 +1,4 @@
 import { Instagram, Twitter, Award, Star } from 'lucide-react';
-import type { PageId } from '@/components/Navbar';
-
-interface TrainersPageProps {
-  onNavigate: (page: PageId) => void;
-}
 
 const trainers = [
   { name: 'Bharath Namadari', specialty: 'Head Strength Coach', exp: '12 years', certs: ['NSCA-CSCS', 'USAW Level 2'], bio: 'Former national powerlifting champion. Marcus has coached over 300 competitive lifters and specializes in raw strength development.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
@@ -12,7 +7,7 @@ const trainers = [
 
 ];
 
-export default function TrainersPage({ onNavigate }: TrainersPageProps) {
+export default function TrainersPage() {
   return (
     <div className="noise-overlay min-h-screen pt-20">
       {/* Header */}
@@ -68,18 +63,6 @@ export default function TrainersPage({ onNavigate }: TrainersPageProps) {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 bg-ink-900 text-center">
-        <div className="max-w-3xl mx-auto px-6">
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-6">
-            TRAIN WITH THE <span className="text-gold-400">BEST</span>
-          </h2>
-          <p className="text-ink-200 mb-8">Book a 1-on-1 session with any of our coaches and accelerate your progress.</p>
-          <button onClick={() => onNavigate('packages')} className="btn-gold">
-            Book a Trainer
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

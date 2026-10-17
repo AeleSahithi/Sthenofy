@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, Check } from 'lucide-react';
+import { MapPin, Phone, Mail, Send, Check } from 'lucide-react';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -15,6 +15,16 @@ export default function ContactPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    const subject = `Sthenofy contact enquiry: ${form.interest}`;
+    const body = [
+      `Name: ${form.name}`,
+      `Email: ${form.email}`,
+      `Phone: ${form.phone || 'Not provided'}`,
+      `Interest: ${form.interest}`,
+      '',
+      form.message,
+    ].join('\n');
+    window.location.href = `mailto:support@sthenofy.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSubmitted(true);
     timeoutRef.current = setTimeout(() => {
       setSubmitted(false);
@@ -49,10 +59,9 @@ export default function ContactPage() {
             {/* Info cards */}
             <div className="lg:col-span-2 space-y-4">
               {[
-                { icon: MapPin, title: 'Visit Us', value: '123 Forge Street\nDowntown District\nMetro City 10001' },
-                { icon: Phone, title: 'Call Us', value: '+1 (555) 234-7890' },
-                { icon: Mail, title: 'Email Us', value: 'hello@sthenofy.com' },
-                { icon: Clock, title: 'Open Hours', value: 'Mon–Fri: 5am – 11pm\nSaturday: 6am – 10pm\nSunday: 7am – 8pm\nMembers: 24/7 Access' },
+                { icon: MapPin, title: 'Visit Us', value: 'BTM 2nd Stage, Bengaluru' },
+                { icon: Phone, title: 'Call Us', value: '+91 90356 54943' },
+                { icon: Mail, title: 'Email Us', value: 'support@sthenofy.com' },
               ].map((item, i) => (
                 <div key={i} className="glass rounded-2xl p-6 flex items-start gap-4 card-hover">
                   <div className="w-12 h-12 rounded-xl bg-gold-400/10 flex items-center justify-center shrink-0">
@@ -69,6 +78,7 @@ export default function ContactPage() {
             {/* Form */}
             <div className="lg:col-span-3">
               <form onSubmit={handleSubmit} className="glass rounded-2xl p-5 sm:p-8 space-y-5">
+                <p className="text-ink-300 text-sm">Your message will open your email app addressed to <span className="text-gold-400">support@sthenofy.com</span> so our team can follow up.</p>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
                     <label htmlFor="name" className="block text-ink-200 text-sm font-semibold uppercase tracking-wider mb-2">Name</label>
@@ -158,21 +168,41 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Map placeholder */}
+      {/* Locations */}
       <section className="pb-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="glass rounded-2xl overflow-hidden h-96 relative flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-ink-800 via-ink-900 to-ink-950" />
-            <div className="relative text-center">
-              <MapPin className="w-12 h-12 text-gold-400 mx-auto mb-4" />
-              <h3 className="font-display text-2xl uppercase tracking-wide mb-2">123 Forge Street</h3>
-              <p className="text-ink-300">Downtown District, Metro City 10001</p>
-              <p className="text-ink-400 text-sm mt-2">Free parking for all members</p>
-            </div>
-            <div className="absolute inset-0 opacity-10" style={{
-              backgroundImage: 'linear-gradient(rgba(255,215,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,215,0,0.3) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                title: 'Bengaluru',
+                address: 'H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage, Bengaluru, 560076.1',
+                query: 'H No 162 8th cross 29th Main MCHS Colony BTM 2nd stage Bengaluru 560076',
+              },
+              {
+                title: 'Hyderabad',
+                address: 'Plot no 28/1, sy no 167, Krishnapuram colony, Mailardevpally, Hyderabad - 500005',
+                query: 'Plot no 28/1 sy no 167 Krishnapuram colony Mailardevpally Hyderabad 500005',
+              },
+            ].map((location) => (
+              <div key={location.title} className="glass overflow-hidden rounded-2xl">
+                <div className="aspect-[4/3] w-full">
+                  <iframe
+                    title={`${location.title} location map`}
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(location.query)}&output=embed`}
+                    className="h-full w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-5 w-5 text-gold-400" />
+                    <h3 className="font-display text-xl uppercase tracking-wide">{location.title}</h3>
+                  </div>
+                  <p className="text-ink-300 text-sm leading-relaxed">{location.address}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

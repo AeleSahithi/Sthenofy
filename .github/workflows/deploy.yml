@@ -38,8 +38,11 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_SANITY_PROJECT_ID: ${{ vars.SANITY_PROJECT_ID }}
-          VITE_SANITY_DATASET: ${{ vars.SANITY_DATASET }}
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+
+      - name: Support direct app routes
+        run: cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -1,20 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ZoomIn, ChevronLeft, ChevronRight, HeartPulse, Target, Sparkles, Trophy } from 'lucide-react';
 
-const galleryImages = [
-  { url: 'https://images.pexels.com/photos/17956264/pexels-photo-17956264.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Athlete in starting position', span: 'lg:row-span-2 lg:col-span-2' },
-  { url: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Stationary bike workout', span: '' },
-  { url: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Jump rope training', span: '' },
-  { url: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Barbell lifting', span: 'lg:col-span-2' },
-  { url: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Heavy barbell lift', span: '' },
-  { url: 'https://images.pexels.com/photos/6389893/pexels-photo-6389893.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Dumbbell ready position', span: '' },
-  { url: 'https://images.pexels.com/photos/38453215/pexels-photo-38453215.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Strength training machine', span: 'lg:col-span-2' },
-  { url: 'https://images.pexels.com/photos/31028213/pexels-photo-31028213.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Leg exercises machine', span: '' },
-  { url: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Female boxer resting', span: '' },
-  { url: 'https://images.pexels.com/photos/6390227/pexels-photo-6390227.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Push-up training', span: '' },
-  { url: 'https://images.pexels.com/photos/5327543/pexels-photo-5327543.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Treadmill workout', span: '' },
-  { url: 'https://images.pexels.com/photos/32695898/pexels-photo-32695898.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', alt: 'Athletes resting', span: 'lg:col-span-2' },
-];
+const galleryAssets = import.meta.glob('@/assets/Gallery/*.{png,jpg,jpeg,webp}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+
+const galleryImages = Object.entries(galleryAssets)
+  .sort(([first], [second]) => first.localeCompare(second))
+  .map(([path, url]) => ({
+    url,
+    alt: `STHENOFY gallery image ${path.split(/[\\/]/).pop()?.split('.')[0] || ''}`,
+  }));
 
 export default function GalleryPage() {
   const [lightbox, setLightbox] = useState<number | null>(null);
@@ -43,19 +41,21 @@ export default function GalleryPage() {
   }, [lightbox, closeLightbox, nextImage, prevImage]);
 
   return (
-    <div className="noise-overlay min-h-screen pt-20">
+    <div className="noise-overlay min-h-screen pt-20 bg-ink-950">
       {/* Header */}
-      <section className="py-12 sm:py-16 lg:py-20 text-center">
+      <section className="relative overflow-hidden py-14 sm:py-20 lg:py-24 text-center bg-ink-950">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
+        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-400/10 blur-[100px]" />
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="section-label justify-center mb-4">
             <ZoomIn className="w-4 h-4" />
-            <span>Inside STHENOFY</span>
+            <span>About STHENOFY</span>
           </div>
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl tracking-tight mb-4">
-            THE <span className="text-gold-400">FORGE</span>
+            BUILT FOR <span className="text-gold-400">YOUR NEXT</span>
           </h1>
-          <p className="text-ink-200 text-base sm:text-lg max-w-2xl mx-auto">
-            Step inside our world. Every corner is designed to push you further than you thought possible.
+          <p className="text-ink-300 text-base sm:text-lg max-w-2xl mx-auto">
+            Strength meets science in a space designed to make progress feel personal, practical, and possible.
           </p>
         </div>
       </section>
@@ -63,52 +63,108 @@ export default function GalleryPage() {
       {/* About */}
       <section className="pb-16 sm:pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-14 items-center glass rounded-2xl p-5 sm:p-8 lg:p-10">
-            <div className="relative overflow-hidden rounded-xl aspect-[4/3]">
-              <img
-                src={galleryImages[0].url}
-                alt="Athlete training at STHENOFY"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink-950/70 via-transparent to-transparent" />
-              <span className="absolute bottom-4 left-4 glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">
-                Built for progress
-              </span>
-            </div>
-            <div>
-              <div className="section-label mb-4">
+          <div className="relative overflow-hidden rounded-3xl border border-gold-400/30 bg-black px-5 py-10 sm:px-10 sm:py-14 lg:px-20 lg:py-16 text-center shadow-[0_0_70px_rgba(250,204,21,0.08)]">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
+            <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gold-400/15 blur-3xl" />
+            <div className="absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-gold-400/10 blur-3xl" />
+            <div className="relative max-w-4xl mx-auto">
+              <div className="section-label justify-center mb-5">
                 <ZoomIn className="w-4 h-4" />
                 <span>About STHENOFY</span>
               </div>
-              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-5">
-                A SPACE THAT <span className="text-gold-400">MOVES YOU</span>
+              <h2 className="font-display text-white text-3xl sm:text-4xl md:text-6xl tracking-tight mb-6">
+                WHERE HEALTH BECOMES <span className="text-gold-400">A LIFESTYLE</span>
               </h2>
-              <p className="text-ink-200 leading-relaxed mb-4">
-                STHENOFY is more than a place to work out. It is a focused training environment where every detail is designed to help you build strength, confidence, and consistency.
+              <p className="text-white text-base sm:text-lg leading-relaxed mb-5">
+                Welcome to STHENOFY — where strength meets science, and fitness becomes a lifestyle. Based in Hyderabad and Bangalore, we turn complex health goals into sustainable everyday realities through custom-built training, evidence-based practice, and unwavering accountability.
               </p>
-              <p className="text-ink-300 leading-relaxed">
-                Explore the space, the equipment, and the energy that make every session an opportunity to go further.
+              <p className="text-gray-400 leading-relaxed max-w-3xl mx-auto">
+                No two bodies or journeys are identical. That is why our approach brings together progressive exercise science with specialized nutrition for PCOD/PCOS, diabetes, and endurance performance — helping you move with purpose and fuel your potential.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Gallery grid */}
-      <section className="pb-24">
+      {/* Why Sthenofy */}
+      <section className="pb-16 sm:pb-20 lg:pb-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 auto-rows-[140px] sm:auto-rows-[200px] lg:auto-rows-[250px]">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            {[
+              {
+                label: 'Why choose us',
+                title: 'Expertise with empathy',
+                text: 'Our dieticians and trainers bring certified skill, practical education, and genuine care to every stage of your journey — from first steps to peak performance.',
+                icon: HeartPulse,
+              },
+              {
+                label: 'Our mission',
+                title: 'Progress made personal',
+                text: 'We deliver personalized training, modern facilities, and motivating support that help every member build strength, health, and confidence.',
+                icon: Target,
+              },
+              {
+                label: 'Our vision',
+                title: 'A healthier community',
+                text: 'We are building a trusted destination where fitness feels accessible, enjoyable, and sustainable for every body and every background.',
+                icon: Sparkles,
+              },
+              {
+                label: 'Our goal',
+                title: 'Your strongest version',
+                text: 'To be the trusted beginning of every journey to strength, health, and confidence — with guidance that stays with you beyond the session.',
+                icon: Trophy,
+              },
+            ].map((item, index) => {
+              const Icon = item.icon;
+              return (
+              <article key={item.label} className="group relative overflow-hidden rounded-2xl p-6 sm:p-7 border border-gold-400/20 bg-ink-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-gold-400 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(0,0,0,0.45)]">
+                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gold-400/15 transition-transform duration-500 group-hover:scale-150" />
+                <div className="absolute bottom-0 left-0 h-1 w-0 bg-gold-400 transition-all duration-500 group-hover:w-full" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-7">
+                    <div className="w-11 h-11 rounded-xl bg-gold-400 border border-gold-300 flex items-center justify-center shadow-[0_0_20px_rgba(250,204,21,0.2)]">
+                      <Icon className="w-5 h-5 text-ink-950" />
+                    </div>
+                    <span className="font-display text-3xl text-gold-400/20">0{index + 1}</span>
+                  </div>
+                  <span className="text-gold-400 text-[11px] font-semibold uppercase tracking-[0.2em]">{item.label}</span>
+                  <h3 className="font-display text-gold-400 text-2xl sm:text-[1.7rem] mt-3 mb-3 leading-tight group-hover:text-gold-300 transition-colors">{item.title}</h3>
+                  <p className="text-ink-100 leading-relaxed text-sm">{item.text}</p>
+                </div>
+              </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery introduction */}
+      <section className="border-t border-gold-400/20 bg-black py-10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="section-label mb-3"><ZoomIn className="w-4 h-4" /><span>Inside STHENOFY</span></div>
+            <h2 className="font-display text-white text-3xl sm:text-5xl tracking-tight">THE <span className="text-gold-400">SPACE</span> IN MOTION</h2>
+          </div>
+          <p className="text-gray-400 max-w-md text-sm sm:text-base leading-relaxed">A closer look at the energy, focus, and everyday work behind every transformation.</p>
+        </div>
+      </section>
+
+      {/* Gallery grid */}
+      <section className="bg-black pb-24">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] auto-rows-[clamp(150px,18vw,260px)] gap-2 sm:gap-3 lg:gap-4">
             {galleryImages.map((img, i) => (
               <button
                 key={i}
-                className={`group relative overflow-hidden rounded-xl cursor-pointer ${img.span}`}
+                className="group relative min-h-0 w-full overflow-hidden rounded-xl cursor-pointer"
                 onClick={() => setLightbox(i)}
                 aria-label={`Open image: ${img.alt}`}
               >
                 <img
                   src={img.url}
                   alt={img.alt}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  className="block w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/40 transition-all duration-300 flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 scale-90 group-hover:scale-100">

@@ -1,5 +1,5 @@
-﻿// Legacy sample posts retained for migration into Sanity.
-// These are not used as a public fallback; only published Sanity posts are displayed.
+﻿// Legacy sample posts retained for migration into the Supabase blog database.
+// These are not used as a public fallback; only published database posts are displayed.
 const blogPosts = [
   {
     title: '5 Compound Lifts That Build Full-Body Strength',
@@ -111,4 +111,3 @@ const blogPosts = [
   },
 ];
 export default blogPosts;
-

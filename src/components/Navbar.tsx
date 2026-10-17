@@ -14,7 +14,7 @@ const navItems: { id: PageId; label: string }[] = [
   //{ id: 'packages', label: 'Packages' },
   { id: 'services', label: 'Services' },
   { id: 'trainers', label: 'Trainers' },
-  { id: 'gallery', label: 'Gallery' },
+  { id: 'gallery', label: 'About Us' },
   { id: 'blog', label: 'Blog' },
   { id: 'contact', label: 'Contact' },
 ];
@@ -60,7 +60,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <img
            src={sthenofyLogo}
            alt="Sthenofy"
-           className="h-16 sm:h-14 w-36 sm:w-40 object-contain transition-transform duration-300 group-hover:scale-105" 
+           className="h-16 sm:h-16 w-40 sm:w-44 object-contain transition-transform duration-300 group-hover:scale-105" 
           />
        </button>
 

@@ -1,12 +1,14 @@
-import { Clock, User, Flame, ArrowRight } from 'lucide-react';
+import { Clock, User, Flame, MessageCircle, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import type { PageId } from '@/components/Navbar';
+import AppointmentBooking from '@/components/appointments/AppointmentBooking';
 
 interface ClassesPageProps {
   onNavigate: (page: PageId) => void;
 }
 
-const classCategories = ['All', 'Strength', 'Performance'];
+const serviceViews = ['All', 'Offline Services'] as const;
+const whatsappNumber = '919346122966';
 
 const classes = [
   { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Nutrition support to help you fuel your training, recover well, and stay consistent.', duration: '60 min', level: 'Intermediate', capacity: 12, img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 6:00pm' },
@@ -17,22 +19,10 @@ const classes = [
   { name: 'Online Training Program', category: 'Strength', desc: 'Train from wherever you are with a structured workout plan and guidance to keep you on track.', duration: '75 min', level: 'Advanced', capacity: 8, img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 6:00pm' },
 ];
 
-const weeklySchedule = [
-  { day: 'Monday', classes: ['Power Lifting — 6:00pm', 'Spin Cycle — 6:00am', 'Pilates Core — 9:00am', 'Boxing — 7:00pm'] },
-  { day: 'Tuesday', classes: ['HIIT Inferno — 7:00am & 6:00pm', 'Vinyasa Flow — 8:00am', 'Olympic Lifting — 6:00pm', 'Muay Thai — 7:00pm'] },
-  { day: 'Wednesday', classes: ['Power Lifting — 6:00pm', 'Spin Cycle — 6:00am', 'Pilates Core — 9:00am', 'Boxing — 7:00pm'] },
-  { day: 'Thursday', classes: ['HIIT Inferno — 7:00am & 6:00pm', 'Vinyasa Flow — 8:00am', 'Olympic Lifting — 6:00pm', 'Muay Thai — 7:00pm'] },
-  { day: 'Friday', classes: ['Power Lifting — 6:00pm', 'Spin Cycle — 6:00am', 'Pilates Core — 9:00am'] },
-  { day: 'Saturday', classes: ['Vinyasa Flow — 8:00am', 'Muay Thai — 7:00pm'] },
-  { day: 'Sunday', classes: ['Open Gym — All Day'] },
-];
-
 export default function ClassesPage({ onNavigate }: ClassesPageProps) {
-  const [activeCategory, setActiveCategory] = useState('All');
-
-  const filteredClasses = activeCategory === 'All'
-    ? classes
-    : classes.filter((c) => c.category === activeCategory);
+  const [activeView, setActiveView] = useState<(typeof serviceViews)[number]>('All');
+  const whatsappLink = (location: string) =>
+    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi Sthenofy, I am interested in offline training in ${location}. Please share the available timings and details.`)}`;
 
   return (
     <div className="noise-overlay min-h-screen pt-20">
@@ -56,28 +46,28 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
       <section className="pb-8">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex flex-wrap gap-2 justify-center">
-            {classCategories.map((cat) => (
+            {serviceViews.map((view) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={view}
+                onClick={() => setActiveView(view)}
                 className={`px-5 py-2 rounded-full text-sm font-semibold uppercase tracking-wider transition-all ${
-                  activeCategory === cat
+                activeView === view
                     ? 'bg-gold-400 text-ink-950'
                     : 'glass text-ink-300 hover:text-gold-400'
                 }`}
               >
-                {cat}
+                {view}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Classes grid */}
+      {/* Services and offline training */}
       <section className="pb-16">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredClasses.map((cls, i) => (
+          {activeView === 'All' ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {classes.map((cls, i) => (
               <div key={i} className="card-hover group glass rounded-2xl overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
                   <img src={cls.img} alt={cls.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -103,53 +93,26 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Weekly schedule */}
-      <section className="py-24 bg-ink-900">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="section-label justify-center mb-4">
-              <Clock className="w-4 h-4" />
-              <span>Weekly Schedule</span>
+          </div> : <div className="rounded-3xl border border-gold-400/30 bg-black p-6 sm:p-10 lg:p-12">
+            <div className="max-w-3xl mx-auto text-center mb-10">
+              <div className="section-label justify-center mb-4"><MapPin className="w-4 h-4" /><span>In-person coaching</span></div>
+              <h2 className="font-display text-3xl sm:text-5xl tracking-tight mb-4">READY FOR <span className="text-gold-400">OFFLINE TRAINING?</span></h2>
+              <p className="text-ink-300 leading-relaxed">Train in person with Sthenofy coaches in Hyderabad or Bangalore. Message us on WhatsApp and we will help you find the right location, timing, and program.</p>
             </div>
-            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">
-              PLAN YOUR <span className="text-gold-400">WEEK</span>
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {weeklySchedule.map((day, i) => (
-              <div key={i} className="glass rounded-xl p-5">
-                <h3 className="font-display text-lg uppercase tracking-wide text-gold-400 mb-4 pb-3 border-b border-ink-50/10">{day.day}</h3>
-                <ul className="space-y-2">
-                  {day.classes.map((cls, j) => (
-                    <li key={j} className="text-ink-300 text-sm flex items-start gap-2">
-                      <span className="text-gold-400 mt-0.5">▪</span>
-                      <span>{cls}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+            <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
+              {['Hyderabad', 'Bangalore'].map((location) => (
+                <div key={location} className="rounded-2xl border border-gold-400/20 bg-ink-900 p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-ink-950"><MapPin className="h-6 w-6" /></div>
+                  <h3 className="font-display text-2xl text-white uppercase tracking-wide mb-5">{location}</h3>
+                  <a href={whatsappLink(location)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-bold text-black transition-transform hover:scale-105"><MessageCircle className="h-4 w-4" /> Chat on WhatsApp</a>
+                </div>
+              ))}
+            </div>
+          </div>}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24 text-center">
-        <div className="max-w-3xl mx-auto px-6">
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight mb-6">
-            READY TO <span className="text-gold-400">MOVE?</span>
-          </h2>
-          <p className="text-ink-200 mb-8">Your first class is on us. Pick a plan and start training today.</p>
-          <button onClick={() => onNavigate('packages')} className="btn-gold">
-            View Membership Plans
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </section>
+      <AppointmentBooking />
     </div>
   );
 }
