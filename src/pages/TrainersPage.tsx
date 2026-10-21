@@ -1,10 +1,39 @@
-import { Instagram, Twitter, Award, Star } from 'lucide-react';
+import { Award } from 'lucide-react';
+
+import bharathImg from '@/assets/Trainers/Bharath Namadari.jpg';
+import vamshiImg from '@/assets/Trainers/Vamshi Krishna Nandimalla.jpg';
+import akshataImg from '@/assets/Trainers/Akshata Chavan.jpeg';
 
 const trainers = [
-  { name: 'Bharath Namadari', specialty: 'Head Strength Coach', exp: '12 years', certs: ['NSCA-CSCS', 'USAW Level 2'], bio: 'Former national powerlifting champion. Marcus has coached over 300 competitive lifters and specializes in raw strength development.', img: 'https://images.pexels.com/photos/13211450/pexels-photo-13211450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Vamshi Krishna Nandimalla', specialty: 'Yoga & Mobility', exp: '8 years', certs: ['RYT-500', 'FRC Mobility Specialist'], bio: 'Doctor of Physical Therapy turned yoga instructor. Sarah blends clinical knowledge with mindful movement for lasting results.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Akshata Chavan', specialty: 'Akshata Chavan', exp: '8 years', certs: ['RYT-500', 'FRC Mobility Specialist'], bio: 'Doctor of Physical Therapy turned yoga instructor. Sarah blends clinical knowledge with mindful movement for lasting results.', img: 'https://images.pexels.com/photos/31245340/pexels-photo-31245340.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-
+  {
+    name: 'Bharath Namadari',
+    specialty: 'Personal Training & Performance',
+    certs: [
+      'Diploma in Personal Training',
+      'Personal Trainer for Special Population',
+      'Human Performance Nutritionist',
+    ],
+    img: bharathImg,
+  },
+  {
+    name: 'Vamshi Krishna Nandimalla',
+    specialty: 'Strength & Conditioning',
+    certs: [
+      'Strength and Conditioning Coach',
+      'CSCS',
+      'Personal Trainer for Special Population',
+    ],
+    img: vamshiImg,
+  },
+  {
+    name: 'Akshata Chavan',
+    specialty: 'Clinical Nutrition',
+    certs: [
+      'Clinical Nutritionist',
+      'Registered Dietician',
+    ],
+    img: akshataImg,
+  },
 ];
 
 export default function TrainersPage() {
@@ -17,52 +46,69 @@ export default function TrainersPage() {
             <Award className="w-4 h-4" />
             <span>Meet the Team</span>
           </div>
+
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl tracking-tight mb-4">
             THE <span className="text-gold-400">COACHES</span>
           </h1>
+
           <p className="text-ink-200 text-base sm:text-lg max-w-2xl mx-auto">
-            Certified, experienced, and relentless. Our trainers are the heart of STHENOFY — here to guide every rep, every set, every step.
+            Meet the team behind your fitness journey, with specialized
+            knowledge in personal training, strength and conditioning,
+            and clinical nutrition.
           </p>
         </div>
       </section>
 
-      {/* Trainers grid */}
+      {/* Trainers Grid */}
       <section className="pb-24">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {trainers.map((trainer, i) => (
-              <div key={i} className="card-hover group glass rounded-2xl overflow-hidden">
+            {trainers.map((trainer) => (
+              <article
+                key={trainer.name}
+                className="card-hover group glass rounded-2xl overflow-hidden"
+              >
+                {/* Coach Photo */}
                 <div className="aspect-[3/4] relative overflow-hidden">
-                  <img src={trainer.img} alt={trainer.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/30 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="font-display text-2xl uppercase tracking-wide mb-1 group-hover:text-gold-400 transition-colors">{trainer.name}</h3>
-                    <p className="text-gold-400 text-sm font-semibold uppercase tracking-wider mb-3">{trainer.specialty}</p>
-                    <div className="flex items-center gap-3 text-ink-300 text-xs mb-3">
-                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-gold-400" /> {trainer.exp}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {trainer.certs.map((cert, j) => (
-                        <span key={j} className="glass rounded-full px-2.5 py-0.5 text-xs text-ink-200">{cert}</span>
-                      ))}
-                    </div>
-                    <p className="text-ink-300 text-sm leading-relaxed mb-4 line-clamp-3">{trainer.bio}</p>
-                    <div className="flex gap-2">
-                      <a href="#" className="w-8 h-8 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-400 transition-colors">
-                        <Instagram className="w-4 h-4" />
-                      </a>
-                      <a href="#" className="w-8 h-8 rounded-lg glass flex items-center justify-center text-ink-200 hover:text-gold-400 transition-colors">
-                        <Twitter className="w-4 h-4" />
-                      </a>
+                  <img
+                    src={trainer.img}
+                    alt={trainer.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
+
+                  <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-6">
+                    <h2 className="font-display text-2xl uppercase tracking-wide mb-2 text-white group-hover:text-gold-400 transition-colors">
+                      {trainer.name}
+                    </h2>
+
+                    <p className="text-gold-400 text-sm font-semibold uppercase tracking-wider mb-4">
+                      {trainer.specialty}
+                    </p>
+
+                    <div className="border-t border-gold-400/30 pt-4">
+                      
+
+                      <div className="flex flex-wrap gap-2">
+                        {trainer.certs.map((cert) => (
+                          <span
+                            key={cert}
+                              className="rounded-full bg-gray-200 border border-gray-300 px-3 py-1.5 text-xs text-black leading-relaxed"
+                          >
+                            {cert}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         </div>
       </section>
-
     </div>
   );
 }

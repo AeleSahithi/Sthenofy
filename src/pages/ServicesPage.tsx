@@ -11,12 +11,12 @@ const serviceViews = ['All', 'Offline Services'] as const;
 const whatsappNumber = '919346122966';
 
 const classes = [
-  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Nutrition support to help you fuel your training, recover well, and stay consistent.', duration: '60 min', level: 'Intermediate', capacity: 12, img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed, Fri — 6:00pm' },
-  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Simple, practical food guidance to help you make better everyday choices and manage your nutrition.', duration: '45 min', level: 'All Levels', capacity: 20, img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 7:00am & 6:00pm' },
-  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized nutrition support to help you build healthier eating habits and feel better day to day.', duration: '45 min', level: 'All Levels', capacity: 25, img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon — Fri — 6:00am' },
-  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'A practical approach to eating better, staying consistent, and working towards healthy fat loss.', duration: '60 min', level: 'All Levels', capacity: 15, img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu, Sat — 8:00am' },
-  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support to help you navigate changes in your body through every stage.', duration: '60 min', level: 'Beginner', capacity: 16, img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Mon, Wed — 7:00pm' },
-  { name: 'Online Training Program', category: 'Strength', desc: 'Train from wherever you are with a structured workout plan and guidance to keep you on track.', duration: '75 min', level: 'Advanced', capacity: 8, img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', schedule: 'Tue, Thu — 6:00pm' },
+  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized nutrition plans to support hormonal health, healthier eating habits, and overall well-being.',  img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause.', img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
 ];
 
 export default function ClassesPage({ onNavigate }: ClassesPageProps) {
@@ -82,13 +82,10 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
                 <div className="p-6">
                   <h3 className="font-display text-2xl uppercase tracking-wide mb-2 group-hover:text-gold-400 transition-colors">{cls.name}</h3>
                   <p className="text-ink-300 text-sm leading-relaxed mb-4">{cls.desc}</p>
-                  <div className="flex items-center gap-4 text-ink-400 text-xs mb-4">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-gold-400" /> {cls.duration}</span>
-                    <span className="flex items-center gap-1"><User className="w-3 h-3 text-gold-400" /> Max {cls.capacity}</span>
-                  </div>
+                  
                   <div className="text-ink-300 text-xs border-t border-ink-50/10 pt-3 mb-4">{cls.schedule}</div>
                   <button onClick={() => onNavigate('packages')} className="w-full btn-outline text-xs py-3">
-                    Book a Class
+                    GET STARTED 
                   </button>
                 </div>
               </div>

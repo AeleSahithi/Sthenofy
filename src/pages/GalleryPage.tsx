@@ -42,23 +42,10 @@ export default function GalleryPage() {
 
   return (
     <div className="noise-overlay min-h-screen pt-20 bg-ink-950">
-      {/* Header */}
-      <section className="relative overflow-hidden py-14 sm:py-20 lg:py-24 text-center bg-ink-950">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
-        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-400/10 blur-[100px]" />
-        <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
-          <div className="section-label justify-center mb-4">
-            <ZoomIn className="w-4 h-4" />
-            <span>About STHENOFY</span>
-          </div>
-          <h1 className="font-display text-4xl sm:text-5xl md:text-7xl tracking-tight mb-4">
-            BUILT FOR <span className="text-gold-400">YOUR NEXT</span>
-          </h1>
-          <p className="text-ink-300 text-base sm:text-lg max-w-2xl mx-auto">
-            Strength meets science in a space designed to make progress feel personal, practical, and possible.
-          </p>
-        </div>
-      </section>
+      {/* Small spacer below navbar */}
+<section className="relative h-4 sm:h-6 bg-ink-950">
+  <div className="absolute left-1/2 top-0 h-40 w-72 -translate-x-1/2 rounded-full bg-gold-400/10 blur-[100px]" />
+</section>
 
       {/* About */}
       <section className="pb-16 sm:pb-20 lg:pb-24">
@@ -76,7 +63,7 @@ export default function GalleryPage() {
                 WHERE HEALTH BECOMES <span className="text-gold-400">A LIFESTYLE</span>
               </h2>
               <p className="text-white text-base sm:text-lg leading-relaxed mb-5">
-                Welcome to STHENOFY — where strength meets science, and fitness becomes a lifestyle. Based in Hyderabad and Bangalore, we turn complex health goals into sustainable everyday realities through custom-built training, evidence-based practice, and unwavering accountability.
+                Welcome to STHENOFY, where strength meets science and fitness becomes a lifestyle. Based in Hyderabad and Bangalore, we combine personalized training, evidence-based practices, and ongoing coaching to help you work towards your health and fitness goals.
               </p>
               <p className="text-gray-400 leading-relaxed max-w-3xl mx-auto">
                 No two bodies or journeys are identical. That is why our approach brings together progressive exercise science with specialized nutrition for PCOD/PCOS, diabetes, and endurance performance — helping you move with purpose and fuel your potential.
@@ -100,19 +87,19 @@ export default function GalleryPage() {
               {
                 label: 'Our mission',
                 title: 'Progress made personal',
-                text: 'We deliver personalized training, modern facilities, and motivating support that help every member build strength, health, and confidence.',
+                text: 'To combine personalized training, evidence-based nutrition, and consistent coaching to help individuals build strength, improve health, and achieve lasting progress.',
                 icon: Target,
               },
               {
                 label: 'Our vision',
                 title: 'A healthier community',
-                text: 'We are building a trusted destination where fitness feels accessible, enjoyable, and sustainable for every body and every background.',
+                text: 'To make fitness and nutrition more accessible, helping people build healthier habits and make well-being a sustainable part of everyday life.',
                 icon: Sparkles,
               },
               {
                 label: 'Our goal',
                 title: 'Your strongest version',
-                text: 'To be the trusted beginning of every journey to strength, health, and confidence — with guidance that stays with you beyond the session.',
+                text: 'To become a trusted partner in every fitness journey through tailored programs, expert guidance, and support that extends beyond each session.',
                 icon: Trophy,
               },
             ].map((item, index) => {
@@ -129,7 +116,7 @@ export default function GalleryPage() {
                     <span className="font-display text-3xl text-gold-400/20">0{index + 1}</span>
                   </div>
                   <span className="text-gold-400 text-[11px] font-semibold uppercase tracking-[0.2em]">{item.label}</span>
-                  <h3 className="font-display text-gold-400 text-2xl sm:text-[1.7rem] mt-3 mb-3 leading-tight group-hover:text-gold-300 transition-colors">{item.title}</h3>
+                  <h3 className="font-display text-black text-2xl sm:text-[1.7rem] mt-3 mb-3 leading-tight group-hover:text-gold-300 transition-colors">{item.title}</h3>
                   <p className="text-ink-100 leading-relaxed text-sm">{item.text}</p>
                 </div>
               </article>
