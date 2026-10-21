@@ -109,14 +109,14 @@ http://127.0.0.1:5173/Sthenofy/admin
 
 ## 5. GitHub Pages variables
 
-Add these as GitHub Actions **repository variables**:
+Add both values as GitHub Actions **repository variables**:
 
 ```text
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-publishable-anon-key
 ```
 
-The workflow injects these values at build time. Publishing a post changes Supabase data and does not require a website redeployment.
+You may use **Settings → Secrets and variables → Actions → Variables → New repository variable**. If you prefer, repository Actions secrets with the same names also work. The deployment workflow checks that both values exist before building, injects them at build time, and stops without publishing if either is missing. Publishing a post changes Supabase data and does not require a website redeployment.
 
 ## 6. Migrating legacy posts
 
