@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Dumbbell, Heart, Flame, Users, Clock, Award, ArrowRight, Zap, Target, TrendingUp,
 } from 'lucide-react';
-import Hero3D from '@/components/Hero3D';
 import type { PageId } from '@/components/Navbar';
 
 interface HomePageProps {
@@ -101,33 +100,44 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       {/* HERO */}
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         {/* Background image */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://images.pexels.com/photos/17956264/pexels-photo-17956264.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-            alt=""
-            className="w-full h-full object-cover opacity-20"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-ink-950 via-ink-950/90 to-ink-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-transparent to-ink-950/60" />
-        </div>
+        
+<div className="absolute inset-0 z-0">
+  <img
+    src={`${import.meta.env.BASE_URL}hero-bg.jpg`}
+    alt="Sthenofy gym training space"
+    className="w-full h-full object-cover object-center"
+  />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 w-full grid lg:grid-cols-2 gap-8 items-center py-8">
+  {/* Subtle white fade on the left, clear image on the right */}
+  <div className="absolute inset-0 bg-gradient-to-r from-white via-white/30 " />
+</div>
+
+
+        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 w-full py-8">
           {/* Left content */}
-          <div className="space-y-5 sm:space-y-6 animate-fade-up">
+          <div className="max-w-2xl space-y-5 sm:space-y-6">
             <div className="section-label">
               <Zap className="w-4 h-4" />
               <span>Personal training and nutrition</span>
             </div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight">
-              BEYOND<br />
-              FITNESS<br />
-              <span className="text-gold-400">INTO PERFORMANCE</span>
+              TRAIN<br />
+              WITH<br />
+              <span className="text-gold-400">PURPOSE</span>
             </h1>
             <p className="text-ink-200 text-base sm:text-lg md:text-xl max-w-md leading-relaxed">
               Personalized training, strength, and nutrition coaching in Hyderabad and Bangalore - built around your individual goals. 
             </p>
             <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
-              <button onClick={() => onNavigate('packages')} className="btn-gold text-xs sm:text-sm">
+              <button
+                onClick={() => {
+                  onNavigate('services');
+                  window.setTimeout(() => {
+                    document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 0);
+                }}
+                className="btn-gold text-xs sm:text-sm"
+              >
                 Start your journey
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -153,10 +163,6 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </div>
 
-          {/* Right: 3D component */}
-          <div className="relative w-full">
-            <Hero3D />
-          </div>
         </div>
 
       </section>

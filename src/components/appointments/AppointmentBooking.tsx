@@ -154,7 +154,7 @@ export default function AppointmentBooking() {
   };
 
   return (
-    <section className="py-20 bg-ink-900">
+    <section id="appointment-booking" className="py-20 bg-ink-900 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
         <div className="text-center mb-10"><div className="section-label justify-center mb-4"><span>Appointments</span></div><h2 className="font-display text-3xl sm:text-5xl">BOOK YOUR <span className="text-gold-400">FIRST SESSION</span></h2><p className="text-ink-300 mt-4">Choose a live availability slot in Asia/Kolkata and pay securely with PayU.</p></div>
         {paymentStatus === 'success' && <div className="mb-6 rounded-xl border border-green-400/30 bg-green-400/10 p-4 text-center text-green-300">Payment verified. Your appointment is confirmed.</div>}

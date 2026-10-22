@@ -88,14 +88,14 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
           </div> : <div className="rounded-3xl border border-gold-400/30 bg-black p-6 sm:p-10 lg:p-12">
             <div className="max-w-3xl mx-auto text-center mb-10">
               <div className="section-label justify-center mb-4"><MapPin className="w-4 h-4" /><span>In-person coaching</span></div>
-              <h2 className="font-display text-3xl sm:text-5xl tracking-tight mb-4">READY FOR <span className="text-gold-400">OFFLINE TRAINING?</span></h2>
-              <p className="text-ink-300 leading-relaxed">Train in person with Sthenofy coaches in Hyderabad or Bangalore. Message us on WhatsApp and we will help you find the right location, timing, and program.</p>
+              <h2 className="font-display text-3xl sm:text-5xl tracking-tight mb-4 text-white">READY FOR <span className="text-gold-400">OFFLINE TRAINING?</span></h2>
+              <p className="text-gray-300 leading-relaxed">Train in person with Sthenofy coaches in Hyderabad or Bangalore. Message us on WhatsApp and we will help you find the right location, timing, and program.</p>
             </div>
             <div className="grid sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
               {['Hyderabad', 'Bangalore'].map((location) => (
-                <div key={location} className="rounded-2xl border border-gold-400/20 bg-ink-900 p-6 text-center">
+                <div key={location} className="rounded-2xl border border-gold-400/20 bg-white p-6 text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-ink-950"><MapPin className="h-6 w-6" /></div>
-                  <h3 className="font-display text-2xl text-white uppercase tracking-wide mb-5">{location}</h3>
+                  <h3 className="font-display text-2xl text-black uppercase tracking-wide mb-5">{location}</h3>
                   <a href={whatsappLink(location)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-bold text-black transition-transform hover:scale-105"><MessageCircle className="h-4 w-4" /> Chat on WhatsApp</a>
                 </div>
               ))}

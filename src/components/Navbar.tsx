@@ -20,6 +20,13 @@ const navItems: { id: PageId; label: string }[] = [
 ];
 
 export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
+  const handleBookingNavigation = () => {
+    onNavigate('services');
+    window.setTimeout(() => {
+      document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
+
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -86,7 +93,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           </ul>
 
           <div className="hidden lg:block">
-            <button onClick={() => handleNav('packages')} className="btn-gold text-xs px-6 py-3">
+            <button onClick={handleBookingNavigation} className="btn-gold text-xs px-6 py-3">
               Join Now
             </button>
           </div>
@@ -134,7 +141,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               {item.label}
             </button>
           ))}
-          <button onClick={() => handleNav('packages')} className="btn-gold mt-4">
+          <button onClick={handleBookingNavigation} className="btn-gold mt-4">
             Join Now
           </button>
         </nav>
