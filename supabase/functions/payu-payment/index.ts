@@ -60,7 +60,17 @@ Deno.serve(async (request) => {
     const amount = Number(booking.service_types.price).toFixed(2);
     const productinfo = booking.service_types.name;
     const firstname = booking.customer_name.trim().split(/\s+/)[0];
-    const hash = await sha512(`${payuKey}|${txnid}|${amount}|${productinfo}|${firstname}|${booking.customer_email}|||||||||||${payuSalt}`);
+    const udf1 = booking.id;
+    const udf2 = '';
+    const udf3 = '';
+    const udf4 = '';
+    const udf5 = '';
+    const udf6 = '';
+    const udf7 = '';
+    const udf8 = '';
+    const udf9 = '';
+    const udf10 = '';
+    const hash = await sha512(`${payuKey}|${txnid}|${amount}|${productinfo}|${firstname}|${booking.customer_email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}|||||||||||${payuSalt}`);
     const action = Deno.env.get('PAYU_ENVIRONMENT') === 'production'
       ? 'https://secure.payu.in/_payment'
       : 'https://test.payu.in/_payment';
@@ -75,11 +85,16 @@ Deno.serve(async (request) => {
       surl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
       furl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
       hash,
-      udf1: booking.id,
-      udf2: '',
-      udf3: '',
-      udf4: '',
-      udf5: '',
+      udf1,
+      udf2,
+      udf3,
+      udf4,
+      udf5,
+      udf6,
+      udf7,
+      udf8,
+      udf9,
+      udf10,
     };
     const { error: updateError } = await supabase.from('bookings').update({
       payment_reference: txnid,
@@ -99,7 +114,8 @@ Deno.serve(async (request) => {
     const bookingId = String(form.get('udf1') || '');
     const receivedHash = String(form.get('hash') || '').toLowerCase();
     const additionalCharges = String(form.get('additionalCharges') || '');
-    const reverseHash = await sha512(`${additionalCharges ? `${additionalCharges}|` : ''}${payuSalt}|${status}|||||||||||${String(form.get('email') || '')}|${String(form.get('firstname') || '')}|${String(form.get('productinfo') || '')}|${String(form.get('amount') || '')}|${txnid}|${payuKey}`);
+    const udfValues = Array.from({ length: 10 }, (_, index) => String(form.get(`udf${10 - index}`) || ''));
+    const reverseHash = await sha512(`${additionalCharges ? `${additionalCharges}|` : ''}${payuSalt}|${status}|${udfValues.join('|')}|${String(form.get('email') || '')}|${String(form.get('firstname') || '')}|${String(form.get('productinfo') || '')}|${String(form.get('amount') || '')}|${txnid}|${payuKey}`);
     const valid = receivedHash === reverseHash;
     if (!valid || !txnid || !bookingId) return htmlRedirect(siteOrigin, 'failed');
     const success = status === 'success';

@@ -1,4 +1,4 @@
-import { Clock, User, Flame, MessageCircle, MapPin } from 'lucide-react';
+import { Flame, MessageCircle, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import type { PageId } from '@/components/Navbar';
 import AppointmentBooking from '@/components/appointments/AppointmentBooking';
@@ -75,15 +75,10 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
                   <div className="absolute top-3 left-3">
                     <span className="glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">{cls.category}</span>
                   </div>
-                  <div className="absolute bottom-3 right-3">
-                    <span className="glass rounded-full px-3 py-1 text-xs text-ink-100">{cls.level}</span>
-                  </div>
                 </div>
                 <div className="p-6">
                   <h3 className="font-display text-2xl uppercase tracking-wide mb-2 group-hover:text-gold-400 transition-colors">{cls.name}</h3>
                   <p className="text-ink-300 text-sm leading-relaxed mb-4">{cls.desc}</p>
-                  
-                  <div className="text-ink-300 text-xs border-t border-ink-50/10 pt-3 mb-4">{cls.schedule}</div>
                   <button onClick={() => onNavigate('packages')} className="w-full btn-outline text-xs py-3">
                     GET STARTED 
                   </button>

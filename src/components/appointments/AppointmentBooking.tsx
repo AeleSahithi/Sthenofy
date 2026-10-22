@@ -100,6 +100,7 @@ export default function AppointmentBooking() {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) return;
     if (!service || !selectedSlot) {
       setError('Select a service, date, and time slot first.');
       return;
@@ -109,18 +110,32 @@ export default function AppointmentBooking() {
     setMessage('');
     try {
       const data = new FormData(event.currentTarget);
-      const booking = await createBooking({
-        serviceTypeId: service.id,
-        customerName: String(data.get('name') || '').trim(),
-        customerEmail: String(data.get('email') || '').trim(),
-        customerPhone: String(data.get('phone') || '').trim(),
-        notes: String(data.get('notes') || '').trim(),
-        startsAt: selectedSlot.startsAt,
-      });
-      const checkout = await createPayUCheckout(booking);
+      let booking;
+      try {
+        booking = await createBooking({
+          serviceTypeId: service.id,
+          customerName: String(data.get('name') || '').trim(),
+          customerEmail: String(data.get('email') || '').trim(),
+          customerPhone: String(data.get('phone') || '').trim(),
+          notes: String(data.get('notes') || '').trim(),
+          startsAt: selectedSlot.startsAt,
+        });
+      } catch (reason) {
+        throw new Error(`Unable to reserve the selected slot: ${reason instanceof Error ? reason.message : 'Please try again.'}`);
+      }
+      let checkout;
+      try {
+        checkout = await createPayUCheckout(booking);
+      } catch (reason) {
+        throw new Error(`Unable to prepare PayU checkout: ${reason instanceof Error ? reason.message : 'Please try again.'}`);
+      }
+      const checkoutUrl = new URL(checkout.action);
+      if (checkoutUrl.protocol !== 'https:' || !['test.payu.in', 'secure.payu.in'].includes(checkoutUrl.hostname)) {
+        throw new Error('PayU returned an unsupported checkout URL.');
+      }
       const payuForm = document.createElement('form');
       payuForm.method = 'POST';
-      payuForm.action = checkout.action;
+      payuForm.action = checkoutUrl.toString();
       payuForm.style.display = 'none';
       Object.entries(checkout.fields).forEach(([name, value]) => {
         const input = document.createElement('input');
