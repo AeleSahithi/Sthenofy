@@ -22,19 +22,13 @@ const navItems: { id: PageId; label: string }[] = [
 export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
   const handleBookingNavigation = () => {
     onNavigate('services');
+    setMobileOpen(false);
     window.setTimeout(() => {
       document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 0);
   };
 
-  const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 30);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
 
   useEffect(() => {
     if (mobileOpen) {
@@ -53,9 +47,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-[60] transition-all duration-500 ${
-          scrolled ? 'bg-ink-950/90 backdrop-blur-lg border-b border-ink-50/5' : 'bg-ink-950/40 backdrop-blur-sm'
-        }`}
+        className="fixed top-0 left-0 right-0 z-[60] border-b border-black/10 bg-white shadow-sm"
       >
         <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
           {/*  Logo */}
@@ -67,7 +59,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <img
            src={sthenofyLogo}
            alt="Sthenofy"
-           className="h-16 sm:h-16 w-40 sm:w-44 object-contain transition-transform duration-300 group-hover:scale-105" 
+           className="h-16 sm:h-16 w-36 sm:w-44 object-contain transition-transform duration-300 group-hover:scale-105"
           />
        </button>
 
@@ -77,8 +69,8 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               <li key={item.id}>
                 <button
                   onClick={() => handleNav(item.id)}
-                  className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group {
-                    currentPage === item.id ? 'text-gold-400' : 'text-ink-100 hover:text-gold-400'
+                  className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
+                    currentPage === item.id ? 'text-gold-500' : 'text-black hover:text-gold-500'
                   }`}
                 >
                   {item.label}
@@ -101,7 +93,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center text-ink-50 z-[70] relative"
+            className="lg:hidden w-10 h-10 flex items-center justify-center text-black z-[70] relative"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -115,12 +107,12 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="absolute inset-0 bg-ink-950/98 backdrop-blur-xl" onClick={() => setMobileOpen(false)} />
-        <nav className="relative flex flex-col items-center justify-center h-full gap-5 sm:gap-6 px-6 pb-20">
+        <div className="absolute inset-0 bg-black/20" onClick={() => setMobileOpen(false)} />
+        <nav className="relative flex flex-col items-center justify-center h-full gap-5 sm:gap-6 bg-white px-6 pb-20 text-black">
           {/* Close button at top for easy reach */}
           <button
             onClick={() => setMobileOpen(false)}
-            className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center text-ink-50 hover:text-gold-400 transition-colors"
+            className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center text-black hover:text-gold-400 transition-colors"
             aria-label="Close menu"
           >
             <X className="w-6 h-6" />
@@ -130,7 +122,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               key={item.id}
               onClick={() => handleNav(item.id)}
               className={`font-display text-3xl sm:text-4xl tracking-wider transition-all duration-500 py-2 ${
-                currentPage === item.id ? 'text-gold-400' : 'text-ink-100'
+                currentPage === item.id ? 'text-gold-500' : 'text-black'
               }`}
               style={{
                 opacity: mobileOpen ? 1 : 0,

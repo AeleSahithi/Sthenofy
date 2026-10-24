@@ -10,10 +10,10 @@ interface HomePageProps {
 }
 
 const features = [
-  { icon: Dumbbell, title: 'World-Class Equipment', desc: 'The right equipment and a focused space to help you train comfortably and consistently.' },
-  { icon: Users, title: 'Expert Trainers', desc: 'Get guidance, support, and a training approach that works for your fitness level and goals.' },
-  { icon: Clock, title: '24/7 Member Access', desc: 'Flexible access that makes it easier to fit training into your routine and stay consistent.' },
-  { icon: Heart, title: 'Group Classes', desc: 'Train alongside others, stay motivated, and enjoy sessions designed to keep you moving.' },
+  { icon: Dumbbell, title: 'PERSONALIZED TRAINING', desc: 'Goal-specific training designed around your fitness level, body, lifestyle, and progress—not a one-size-fits-all workout.' },
+  { icon: Users, title: 'EXPERT COACHING', desc: 'Work with experienced coaches who help you train with better technique, structure, progression, and accountability.' },
+  { icon: Clock, title: 'PERFORMANCE NUTRITION', desc: 'Evidence-based nutrition guidance designed to support strength, endurance, body composition, metabolic health, and performance.' },
+  { icon: Heart, title: 'PROGRESS THAT LASTS', desc: 'Whether you\'re training online or working with a coach in person, your program evolves with your progress and goals.' },
 ];
 
 const stats = [
@@ -95,9 +95,9 @@ export default function HomePage({ onNavigate }: HomePageProps) {
 {/* Background image */}
 <div className="absolute inset-0 z-0">
   <img
-    src={`${import.meta.env.BASE_URL}hero-bg.jpg`}
+    src={`${import.meta.env.BASE_URL}hero-bg.png`}
     alt="Sthenofy gym training space"
-    className="w-full h-full object-cover object-center"
+    className="w-full h-full bg-black object-contain object-center sm:object-cover"
   />
 </div>
 

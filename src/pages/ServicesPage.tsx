@@ -3,6 +3,14 @@ import { useState } from 'react';
 import type { PageId } from '@/components/Navbar';
 import AppointmentBooking from '@/components/appointments/AppointmentBooking';
 
+import fatLossImg from '@/assets/Services/nutrition for fat loss.png';
+import menopauseImg from '@/assets/Services/pre and peri menopause.png';
+import onlineTrainingImg from '@/assets/Services/online training program.png';
+import Endurancesportsnutrition from '@/assets/Services/Endurance Sports Nutrition.png';
+import NutritionforDiabetes from '@/assets/Services/Nutrition for Diabetes.png';
+import NutritionforPCOD from '@/assets/Services/Nutrition for PCOD PCOS.png';
+
+
 interface ClassesPageProps {
   onNavigate: (page: PageId) => void;
 }
@@ -11,12 +19,12 @@ const serviceViews = ['All', 'Offline Services'] as const;
 const whatsappNumber = '919346122966';
 
 const classes = [
-  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized  plans to support hormonal health, healthier eating habits, and overall well-being.',  img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause with expert guidance.', img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: Endurancesportsnutrition },
+  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: NutritionforDiabetes },
+  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized  plans to support hormonal health, healthier eating habits, and overall well-being.',  img: NutritionforPCOD },
+  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: fatLossImg },
+  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause with expert guidance.', img: menopauseImg },
+  { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: onlineTrainingImg },
 ];
 
 export default function ClassesPage({ onNavigate }: ClassesPageProps) {

@@ -62,7 +62,7 @@ export default function ContactPage() {
                 { icon: MapPin, title: 'Visit Us', value: '29th Main, MCHS Colony, BTM 2nd stage, Bengaluru' },
                 { icon: MapPin, title: 'Visit Us', value: 'Krishnapuram colony, Mailardevpally, Hyderabad' },
                 { icon: Phone, title: 'Call Us', value: '+91 90356 54943' },
-                { icon: Mail, title: 'Email Us', value: 'support@sthenofy.com' },
+                { icon: Mail, title: 'Email Us', value: 'support@sthenofy.com', href: 'mailto:support@sthenofy.com' },
               ].map((item, i) => (
                 <div key={i} className="glass rounded-2xl p-6 flex items-start gap-4 card-hover">
                   <div className="w-12 h-12 rounded-xl bg-gold-400/10 flex items-center justify-center shrink-0">
@@ -70,7 +70,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-display text-lg uppercase tracking-wide mb-1">{item.title}</h3>
-                    <p className="text-ink-300 text-sm whitespace-pre-line leading-relaxed">{item.value}</p>
+                    {item.href ? (
+                      <a href={item.href} className="text-ink-300 text-sm whitespace-pre-line leading-relaxed hover:text-gold-400 transition-colors">{item.value}</a>
+                    ) : (
+                      <p className="text-ink-300 text-sm whitespace-pre-line leading-relaxed">{item.value}</p>
+                    )}
                   </div>
                 </div>
               ))}

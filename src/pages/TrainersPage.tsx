@@ -6,16 +6,6 @@ import akshataImg from '@/assets/Trainers/Akshata Chavan.jpeg';
 
 const trainers = [
   {
-    name: 'Bharath Namadari',
-    specialty: 'Personal Training & Performance',
-    certs: [
-      'Diploma in Personal Training',
-      'Personal Trainer for Special Population',
-      'Human Performance Nutritionist',
-    ],
-    img: bharathImg,
-  },
-  {
     name: 'Vamshi Krishna Nandimalla',
     specialty: 'Strength & Conditioning',
     certs: [
@@ -24,6 +14,16 @@ const trainers = [
       'Personal Trainer for Special Population',
     ],
     img: vamshiImg,
+  },
+    {
+    name: 'Bharath Namadari',
+    specialty: 'Personal Training & Performance',
+    certs: [
+      'Diploma in Personal Training',
+      'Personal Trainer for Special Population',
+      'Human Performance Nutritionist',
+    ],
+    img: bharathImg,
   },
   {
     name: 'Akshata Chavan',
