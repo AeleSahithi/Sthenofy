@@ -13,9 +13,9 @@ const whatsappNumber = '919346122966';
 const classes = [
   { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
   { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized nutrition plans to support hormonal health, healthier eating habits, and overall well-being.',  img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized  plans to support hormonal health, healthier eating habits, and overall well-being.',  img: 'https://images.pexels.com/photos/6388450/pexels-photo-6388450.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
   { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: 'https://images.pexels.com/photos/3984353/pexels-photo-3984353.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
-  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause.', img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
+  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause with expert guidance.', img: 'https://images.pexels.com/photos/4754144/pexels-photo-4754144.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
   { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: 'https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940' },
 ];
 
@@ -31,13 +31,13 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
         <div className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="section-label justify-center mb-4">
             <Flame className="w-4 h-4" />
-            <span>Group Classes</span>
+            <span>Training & Nutrition</span>
           </div>
           <h1 className="font-display text-4xl sm:text-5xl md:text-7xl tracking-tight mb-4">
-            FIND YOUR <span className="text-gold-400">TRIBE</span>
+            FIND YOUR <span className="text-gold-400">NEXT LEVEL</span>
           </h1>
           <p className="text-ink-200 text-base sm:text-lg max-w-2xl mx-auto">
-            Over 50 classes every week. From strength to yoga, combat to cardio — there is a class for every goal and every level.
+            Every goal needs the right approach. Discover tailored training and nutrition programs built around your body, your needs, and your ambitions.
           </p>
         </div>
       </section>

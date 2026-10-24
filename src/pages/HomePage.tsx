@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Dumbbell, Heart, Flame, Users, Clock, Award, ArrowRight, Zap, Target, TrendingUp,
+  Dumbbell, Heart, Flame, Users, Clock, Award, ArrowRight, Zap, Target, TrendingUp, Instagram,
 } from 'lucide-react';
+import ctaBackground from '@/assets/Gallery/vlcsnap-2025-07-20-12h21m46s983.png';
 import type { PageId } from '@/components/Navbar';
 
 interface HomePageProps {
@@ -22,34 +23,23 @@ const stats = [
   { value: 4, suffix: 'y', label: 'Years Strong' },
 ];
 
-interface VideoTestimonial {
+interface ReelTestimonial {
   name: string;
   subtitle?: string;
-  youtubeUrl: string;
+  instagramUrl: string;
 }
 
-const videoTestimonials: VideoTestimonial[] = [
-  // Placeholder entries — replace these URLs and names with real client testimonials.
-  { name: 'Placeholder Client 1', subtitle: 'Replace with a real member story', youtubeUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
-  { name: 'Placeholder Client 2', subtitle: 'Replace with a real fitness journey', youtubeUrl: 'https://youtu.be/M7lc1UVf-VE' },
-  { name: 'Placeholder Client 3', subtitle: 'Replace with a real STHENOFY experience', youtubeUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE' },
+const reelTestimonials: ReelTestimonial[] = [
+  { name: 'Sthenofy Reel 1', subtitle: 'Real training. Real progress.', instagramUrl: 'https://www.instagram.com/reel/Dd0_6-mzR8q/' },
+  { name: 'Sthenofy Reel 2', subtitle: 'Built with consistency.', instagramUrl: 'https://www.instagram.com/reel/DZRkPLaR1Nc/' },
+  { name: 'Sthenofy Reel 3', subtitle: 'Strength beyond limits.', instagramUrl: 'https://www.instagram.com/reel/DU5jpDck9au/' },
+  { name: 'Sthenofy Reel 4', subtitle: 'Move with purpose.', instagramUrl: 'https://www.instagram.com/reel/DSU-eSMka2T/' },
+  { name: 'Sthenofy Reel 5', subtitle: 'Your fitness, your pace.', instagramUrl: 'https://www.instagram.com/reel/DTsiTJ6EVp6/' },
+  { name: 'Sthenofy Reel 6', subtitle: 'Into performance.', instagramUrl: 'https://www.instagram.com/reel/DP3v8qyEl0A/' },
 ];
 
-function getYouTubeVideoId(url: string): string | null {
-  try {
-    const parsedUrl = new URL(url);
-    if (parsedUrl.hostname === 'youtu.be') {
-      return parsedUrl.pathname.slice(1).split('/')[0] || null;
-    }
-    if (parsedUrl.hostname.includes('youtube.com')) {
-      if (parsedUrl.pathname === '/watch') return parsedUrl.searchParams.get('v');
-      if (parsedUrl.pathname.startsWith('/shorts/')) return parsedUrl.pathname.split('/')[2] || null;
-      if (parsedUrl.pathname.startsWith('/embed/')) return parsedUrl.pathname.split('/')[2] || null;
-    }
-  } catch {
-    return null;
-  }
-  return null;
+function getInstagramReelId(url: string): string {
+  return url.match(/\/reel\/([^/?]+)/)?.[1] || '';
 }
 
 function Counter({ value, suffix }: { value: number; suffix: string }) {
@@ -93,7 +83,7 @@ function Counter({ value, suffix }: { value: number; suffix: string }) {
 
 export default function HomePage({ onNavigate }: HomePageProps) {
   const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
-  const testimonialLoop = [...videoTestimonials, ...videoTestimonials];
+  const testimonialLoop = [...reelTestimonials, ...reelTestimonials];
 
   return (
     <div className="noise-overlay">
@@ -101,16 +91,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
         {/* Background image */}
         
+ 
+{/* Background image */}
 <div className="absolute inset-0 z-0">
   <img
     src={`${import.meta.env.BASE_URL}hero-bg.jpg`}
     alt="Sthenofy gym training space"
     className="w-full h-full object-cover object-center"
   />
-
-  {/* Subtle white fade on the left, clear image on the right */}
-  <div className="absolute inset-0 bg-gradient-to-r from-white via-white/30 " />
 </div>
+
 
 
         <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 w-full py-8">
@@ -120,12 +110,12 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               <Zap className="w-4 h-4" />
               <span>Personal training and nutrition</span>
             </div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight  text-white">
               TRAIN<br />
               WITH<br />
               <span className="text-gold-400">PURPOSE</span>
             </h1>
-            <p className="text-ink-200 text-base sm:text-lg md:text-xl max-w-md leading-relaxed">
+            <p className="text-white text-base sm:text-lg md:text-xl max-w-md leading-relaxed">
               Personalized training, strength, and nutrition coaching in Hyderabad and Bangalore - built around your individual goals. 
             </p>
             <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
@@ -141,7 +131,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                 Start your journey
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button onClick={() => onNavigate('services')} className="btn-outline text-xs sm:text-sm">
+              <button onClick={() => onNavigate('services')} className="border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-4 py-2 transition-colors text-xs sm:text-sm">
                 View Services
               </button>
             </div>
@@ -213,14 +203,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* STATS */}
-      <section className="py-16 sm:py-24 bg-ink-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-gold-500/5 to-transparent" />
+      <section className="py-16 sm:py-24 bg-black relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {stats.map((stat, i) => (
               <div key={i} className="text-center">
                 <Counter value={stat.value} suffix={stat.suffix} />
-                <div className="mt-2 text-ink-300 text-xs sm:text-sm uppercase tracking-wider">{stat.label}</div>
+                <div className="mt-2 text-white text-xs sm:text-sm uppercase tracking-wider">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -293,7 +282,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           >
             <div className="testimonials-track flex w-max gap-4 sm:gap-6">
               {testimonialLoop.map((testimonial, index) => {
-                const videoId = getYouTubeVideoId(testimonial.youtubeUrl);
+                const reelId = getInstagramReelId(testimonial.instagramUrl);
                 return (
                   <article
                     key={`${testimonial.name}-${index}`}
@@ -307,21 +296,35 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                         <p className="text-ink-400 text-xs sm:text-sm mt-1">{testimonial.subtitle}</p>
                       )}
                     </div>
-                    <div className="relative aspect-video overflow-hidden rounded-xl border border-ink-50/10 bg-ink-900">
-                      {videoId ? (
+                    <div className="relative aspect-[9/16] max-h-[480px] overflow-hidden rounded-xl border border-ink-50/10 bg-ink-900">
+                      {reelId ? (
                         <iframe
-                          src={`https://www.youtube-nocookie.com/embed/${videoId}`}
-                          title={`${testimonial.name} video testimonial`}
+                          src={`https://www.instagram.com/reel/${reelId}/embed/?hidecaption=true`}
+                          title={`${testimonial.name} Instagram Reel`}
                           loading="lazy"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          allowFullScreen
-                          className="absolute inset-0 h-full w-full"
+                          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                          className="pointer-events-none absolute inset-0 h-full w-full"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-400">
-                          Add a valid YouTube testimonial URL to display this video.
+                          Instagram Reel preview unavailable.
                         </div>
                       )}
+                      {reelId && (
+                        <a
+                          href={testimonial.instagramUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open ${testimonial.name} on Instagram`}
+                          className="absolute inset-0 z-10"
+                        >
+                          <span className="sr-only">Open this Instagram Reel</span>
+                        </a>
+                      )}
+                      <div className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-full bg-black/70 px-3 py-2 text-xs font-semibold text-white">
+                        <Instagram className="h-4 w-4 text-pink-400" />
+                        Watch on Instagram
+                      </div>
                     </div>
                   </article>
                 );
@@ -334,15 +337,15 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       {/* CTA */}
       <section className="py-16 sm:py-24 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src="https://images.pexels.com/photos/19722863/pexels-photo-19722863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940" alt="" className="w-full h-full object-cover opacity-55" />
-          <div className="absolute inset-0 bg-ink-950/20" />
+          <img src={ctaBackground} alt="" className="w-full h-full object-cover grayscale opacity-45" />
+          <div className="absolute inset-0 bg-black/75" />
         </div>
         <div className="relative max-w-4xl mx-auto px-5 sm:px-6 text-center">
           <Award className="w-10 h-10 sm:w-12 sm:h-12 text-gold-500 mx-auto mb-6" />
-          <h2 className="font-display text-3xl sm:text-4xl md:text-6xl lg:text-7xl tracking-tight mb-6">
+          <h2 className="font-display text-white sm:text-4xl md:text-6xl lg:text-7xl tracking-tight mb-6">
             YOUR TRANSFORMATION<br /><span className="text-gold-500">STARTS TODAY</span>
           </h2>
-          <p className="text-ink-100 text-base sm:text-lg max-w-2xl mx-auto mb-8">
+          <p className="text-white text-base sm:text-lg max-w-2xl mx-auto mb-8">
             Join 500+ members who decided to stop waiting. No contracts, no pressure — just results.
           </p>
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
@@ -350,7 +353,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               Make Appointment
               <ArrowRight className="w-4 h-4" />
             </button>
-            <button onClick={() => onNavigate('contact')} className="btn-outline text-xs sm:text-sm">
+            <button onClick={() => onNavigate('contact')} className="border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-6 py-3 transition-colors text-xs sm:text-sm">
               Contact Us
             </button>
           </div>

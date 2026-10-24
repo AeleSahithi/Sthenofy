@@ -21,7 +21,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               </span>
             </div>
             <p className="text-ink-300 text-sm leading-relaxed mb-6">
-              Train beyond limits. A premium fitness studio built for those who refuse to settle.
+              Train smarter with personalized fitness programs, strength training, and evidence-based nutrition built for lasting progress.
             </p>
             <div className="flex gap-3">
   <a
@@ -61,11 +61,11 @@ export default function Footer({ onNavigate }: FooterProps) {
             <ul className="space-y-3">
               {[
                 { id: 'home' as PageId, label: 'Home' },
-                { id: 'packages' as PageId, label: 'Packages' },
                 { id: 'services' as PageId, label: 'Services' },
                 { id: 'trainers' as PageId, label: 'Trainers' },
                 { id: 'gallery' as PageId, label: 'About Us' },
                 { id: 'blog' as PageId, label: 'Blog' },
+                { id: 'contact' as PageId, label: 'Contact' },
               ].map((link) => (
                 <li key={link.id}>
                   <button
@@ -97,7 +97,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               </li>
               <li className="flex items-center gap-3 text-ink-300 text-sm">
                 <Mail className="w-4 h-4 text-gold-400 shrink-0" />
-                <span>support@sthenofy.com</span>
+                <a href="mailto:support@sthenofy.com" className="hover:text-gold-400 transition-colors">support@sthenofy.com</a>
               </li>
             </ul>
           </div>
@@ -107,8 +107,9 @@ export default function Footer({ onNavigate }: FooterProps) {
             <h4 className="font-display text-lg uppercase tracking-wider mb-4 text-ink-50">Why Sthenofy</h4>
             <ul className="space-y-2 text-ink-300 text-sm">
               <li>Personalised Training</li>
-              <li>Flexible Sessions</li>
-              <li>Goal-Oriented Programs</li>
+              <li>Flexible Coaching</li>
+              <li>Goal Oriented Programs</li>
+              <li>Evidence Based Nutrition</li>
               <li className="border-t border-ink-50/10 pt-2 mt-2 text-gold-400 font-semibold">Your Fitness, Your Pace</li>
             </ul>
           </div>

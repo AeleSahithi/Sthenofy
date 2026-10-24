@@ -59,7 +59,8 @@ export default function ContactPage() {
             {/* Info cards */}
             <div className="lg:col-span-2 space-y-4">
               {[
-                { icon: MapPin, title: 'Visit Us', value: 'BTM 2nd Stage, Bengaluru' },
+                { icon: MapPin, title: 'Visit Us', value: '29th Main, MCHS Colony, BTM 2nd stage, Bengaluru' },
+                { icon: MapPin, title: 'Visit Us', value: 'Krishnapuram colony, Mailardevpally, Hyderabad' },
                 { icon: Phone, title: 'Call Us', value: '+91 90356 54943' },
                 { icon: Mail, title: 'Email Us', value: 'support@sthenofy.com' },
               ].map((item, i) => (
@@ -78,7 +79,7 @@ export default function ContactPage() {
             {/* Form */}
             <div className="lg:col-span-3">
               <form onSubmit={handleSubmit} className="glass rounded-2xl p-5 sm:p-8 space-y-5">
-                <p className="text-ink-300 text-sm">Your message will open your email app addressed to <span className="text-gold-400">support@sthenofy.com</span> so our team can follow up.</p>
+                <p className="text-ink-300 text-sm">Send us your query, and our team will get back to you via email.</p>
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
                     <label htmlFor="name" className="block text-ink-200 text-sm font-semibold uppercase tracking-wider mb-2">Name</label>

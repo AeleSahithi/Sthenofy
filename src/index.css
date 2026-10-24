@@ -127,6 +127,19 @@
   will-change: transform;
 }
 
+.testimonials-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.testimonials-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 204, 0, 0.35);
+  border-radius: 999px;
+}
+
+.testimonials-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 204, 0, 0.6);
+}
+
 .testimonials-scroll:hover .testimonials-track,
 .testimonials-scroll.is-paused .testimonials-track {
   animation-play-state: paused;
@@ -139,19 +152,6 @@
   to {
     transform: translateX(calc(-50% - 0.75rem));
   }
-}
-
-.testimonials-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.testimonials-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 204, 0, 0.35);
-  border-radius: 999px;
-}
-
-.testimonials-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 204, 0, 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {
