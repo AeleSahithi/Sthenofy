@@ -6,7 +6,7 @@ import AppointmentBooking from '@/components/appointments/AppointmentBooking';
 import fatLossImg from '@/assets/Services/nutrition for fat loss.png';
 import menopauseImg from '@/assets/Services/pre and peri menopause.png';
 import onlineTrainingImg from '@/assets/Services/online training program.png';
-import Endurancesportsnutrition from '@/assets/Services/Endurance Sports Nutrition.png';
+import Endurancesportsnutrition from '@/assets/Services/Endurance sportes nutrition.png';
 import NutritionforDiabetes from '@/assets/Services/Nutrition for Diabetes.png';
 import NutritionforPCOD from '@/assets/Services/Nutrition for PCOD PCOS.png';
 
