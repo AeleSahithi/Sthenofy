@@ -1,9 +1,25 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('PUBLIC_SITE_ORIGIN') || '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+function getCorsHeaders(request: Request) {
+  const requestOrigin = request.headers.get('Origin') || '';
+  const configuredOrigin = Deno.env.get('PUBLIC_SITE_ORIGIN') || '';
+  const allowedOrigins = [
+    configuredOrigin,
+    'https://aelesahithi.github.io',
+    'http://localhost:5173',
+    'http://localhost:4173',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:4173',
+  ].filter(Boolean);
+  const origin = allowedOrigins.includes(requestOrigin)
+    ? requestOrigin
+    : configuredOrigin || 'https://aelesahithi.github.io';
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
 
 const encoder = new TextEncoder();
 
@@ -12,10 +28,10 @@ async function sha512(value: string) {
   return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function response(status: number, body: Record<string, unknown>) {
+function response(request: Request, status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...getCorsHeaders(request), 'Content-Type': 'application/json' },
   });
 }
 
@@ -28,82 +44,83 @@ function htmlRedirect(origin: string, status: string, bookingId?: string) {
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
+  if (request.method === 'OPTIONS') return new Response('ok', { headers: getCorsHeaders(request) });
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
-  const payuKey = Deno.env.get('PAYU_MERCHANT_KEY');
-  const payuSalt = Deno.env.get('PAYU_MERCHANT_SALT');
-  const siteOrigin = Deno.env.get('PUBLIC_SITE_ORIGIN') || new URL(request.url).origin;
-  if (!payuKey || !payuSalt) return response(503, { error: 'PayU is not configured.' });
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    );
+    const payuKey = Deno.env.get('PAYU_MERCHANT_KEY');
+    const payuSalt = Deno.env.get('PAYU_MERCHANT_SALT');
+    const siteOrigin = Deno.env.get('PUBLIC_SITE_ORIGIN') || new URL(request.url).origin;
+    if (!payuKey || !payuSalt) return response(request, 503, { error: 'PayU is not configured.' });
 
-  const isCheckoutRequest = request.method === 'POST'
-    && request.headers.get('content-type')?.includes('application/json');
-  if (isCheckoutRequest) {
-    const { bookingId } = await request.json();
-    if (!bookingId) return response(400, { error: 'bookingId is required.' });
-    const { data: booking, error } = await supabase
-      .from('bookings')
-      .select('*, service_types(name, price, currency)')
-      .eq('id', bookingId)
-      .eq('status', 'hold')
-      .eq('payment_status', 'pending')
-      .single();
-    if (error || !booking) return response(404, { error: 'Booking hold not found or expired.' });
-    if (booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() <= Date.now()) {
-      await supabase.from('bookings').update({ status: 'expired', updated_at: new Date().toISOString() }).eq('id', bookingId);
-      return response(409, { error: 'This booking hold has expired. Please select the slot again.' });
+    const isCheckoutRequest = request.method === 'POST'
+      && request.headers.get('content-type')?.includes('application/json');
+    if (isCheckoutRequest) {
+      const { bookingId } = await request.json();
+      if (!bookingId) return response(request, 400, { error: 'bookingId is required.' });
+      const { data: booking, error } = await supabase
+        .from('bookings')
+        .select('*, service_types(name, price, currency)')
+        .eq('id', bookingId)
+        .eq('status', 'hold')
+        .eq('payment_status', 'pending')
+        .single();
+      if (error || !booking) return response(request, 404, { error: 'Booking hold not found or expired.' });
+      if (booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() <= Date.now()) {
+        await supabase.from('bookings').update({ status: 'expired', updated_at: new Date().toISOString() }).eq('id', bookingId);
+        return response(request, 409, { error: 'This booking hold has expired. Please select the slot again.' });
+      }
+      const txnid = `STH_${booking.id.replaceAll('-', '').slice(0, 20)}_${Date.now().toString(36)}`;
+      const amount = Number(booking.service_types.price).toFixed(2);
+      const productinfo = booking.service_types.name;
+      const firstname = booking.customer_name.trim().split(/\s+/)[0];
+      const udf1 = booking.id;
+      const udf2 = '';
+      const udf3 = '';
+      const udf4 = '';
+      const udf5 = '';
+      const udf6 = '';
+      const udf7 = '';
+      const udf8 = '';
+      const udf9 = '';
+      const udf10 = '';
+      const hash = await sha512(`${payuKey}|${txnid}|${amount}|${productinfo}|${firstname}|${booking.customer_email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}|||||||||||${payuSalt}`);
+      const action = Deno.env.get('PAYU_ENVIRONMENT') === 'production'
+        ? 'https://secure.payu.in/_payment'
+        : 'https://test.payu.in/_payment';
+      const fields = {
+        key: payuKey,
+        txnid,
+        amount,
+        productinfo,
+        firstname,
+        email: booking.customer_email,
+        phone: booking.customer_phone || '',
+        surl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
+        furl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
+        hash,
+        udf1,
+        udf2,
+        udf3,
+        udf4,
+        udf5,
+        udf6,
+        udf7,
+        udf8,
+        udf9,
+        udf10,
+      };
+      const { error: updateError } = await supabase.from('bookings').update({
+        payment_reference: txnid,
+        payment_transaction_id: txnid,
+        updated_at: new Date().toISOString(),
+      }).eq('id', booking.id).eq('status', 'hold');
+      if (updateError) return response(request, 500, { error: 'Unable to attach PayU transaction.' });
+      return response(request, 200, { action, fields });
     }
-    const txnid = `STH_${booking.id.replaceAll('-', '').slice(0, 20)}_${Date.now().toString(36)}`;
-    const amount = Number(booking.service_types.price).toFixed(2);
-    const productinfo = booking.service_types.name;
-    const firstname = booking.customer_name.trim().split(/\s+/)[0];
-    const udf1 = booking.id;
-    const udf2 = '';
-    const udf3 = '';
-    const udf4 = '';
-    const udf5 = '';
-    const udf6 = '';
-    const udf7 = '';
-    const udf8 = '';
-    const udf9 = '';
-    const udf10 = '';
-    const hash = await sha512(`${payuKey}|${txnid}|${amount}|${productinfo}|${firstname}|${booking.customer_email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}|||||||||||${payuSalt}`);
-    const action = Deno.env.get('PAYU_ENVIRONMENT') === 'production'
-      ? 'https://secure.payu.in/_payment'
-      : 'https://test.payu.in/_payment';
-    const fields = {
-      key: payuKey,
-      txnid,
-      amount,
-      productinfo,
-      firstname,
-      email: booking.customer_email,
-      phone: booking.customer_phone || '',
-      surl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
-      furl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
-      hash,
-      udf1,
-      udf2,
-      udf3,
-      udf4,
-      udf5,
-      udf6,
-      udf7,
-      udf8,
-      udf9,
-      udf10,
-    };
-    const { error: updateError } = await supabase.from('bookings').update({
-      payment_reference: txnid,
-      payment_transaction_id: txnid,
-      updated_at: new Date().toISOString(),
-    }).eq('id', booking.id).eq('status', 'hold');
-    if (updateError) return response(500, { error: 'Unable to attach PayU transaction.' });
-    return response(200, { action, fields });
-  }
 
   if (request.method === 'POST' || request.method === 'GET') {
     const form = request.method === 'POST'
@@ -129,5 +146,9 @@ Deno.serve(async (request) => {
     return htmlRedirect(siteOrigin, success ? 'success' : 'failed', bookingId);
   }
 
-  return response(405, { error: 'Method not allowed.' });
+    return response(request, 405, { error: 'Method not allowed.' });
+  } catch (error) {
+    console.error('PayU checkout request failed:', error);
+    return response(request, 500, { error: 'PayU checkout service failed. Check the Edge Function logs.' });
+  }
 });
