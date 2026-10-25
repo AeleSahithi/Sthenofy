@@ -30,12 +30,12 @@ interface ReelTestimonial {
 }
 
 const reelTestimonials: ReelTestimonial[] = [
-  { name: 'Sthenofy Reel 1', subtitle: 'Real training. Real progress.', instagramUrl: 'https://www.instagram.com/reel/Dd0_6-mzR8q/' },
-  { name: 'Sthenofy Reel 2', subtitle: 'Built with consistency.', instagramUrl: 'https://www.instagram.com/reel/DZRkPLaR1Nc/' },
-  { name: 'Sthenofy Reel 3', subtitle: 'Strength beyond limits.', instagramUrl: 'https://www.instagram.com/reel/DU5jpDck9au/' },
-  { name: 'Sthenofy Reel 4', subtitle: 'Move with purpose.', instagramUrl: 'https://www.instagram.com/reel/DSU-eSMka2T/' },
-  { name: 'Sthenofy Reel 5', subtitle: 'Your fitness, your pace.', instagramUrl: 'https://www.instagram.com/reel/DTsiTJ6EVp6/' },
-  { name: 'Sthenofy Reel 6', subtitle: 'Into performance.', instagramUrl: 'https://www.instagram.com/reel/DP3v8qyEl0A/' },
+  { name: 'REAL PEOPLE. REAL PROGRESS', subtitle: 'Every step counts.', instagramUrl: 'https://www.instagram.com/reel/Dd0_6-mzR8q/' },
+  { name: 'THE JOURNEY TO STRONGER', subtitle: 'Built with consistency.', instagramUrl: 'https://www.instagram.com/reel/DZRkPLaR1Nc/' },
+  { name: 'FITNESS IN ACTION', subtitle: 'Strength beyond limits.', instagramUrl: 'https://www.instagram.com/reel/DU5jpDck9au/' },
+  { name: 'TRAIN WITH PURPOSE', subtitle: 'Move with purpose.', instagramUrl: 'https://www.instagram.com/reel/DSU-eSMka2T/' },
+  { name: 'BUILT, NOT GIVEN', subtitle: 'Dedication over excuses.', instagramUrl: 'https://www.instagram.com/reel/DTsiTJ6EVp6/' },
+  { name: 'THE STHENOFY EXPERIENCE', subtitle: 'Stronger habits. Better results.', instagramUrl: 'https://www.instagram.com/reel/DP3v8qyEl0A/' },
 ];
 
 function getInstagramReelId(url: string): string {
