@@ -88,22 +88,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   return (
     <div className="noise-overlay">
       {/* HERO */}
-      <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
-        {/* Background image */}
-        
- 
-{/* Background image */}
-<div className="absolute inset-0 z-0">
-  <img
-    src={`${import.meta.env.BASE_URL}hero-bg.png`}
-    alt="Sthenofy gym training space"
-    className="w-full h-full bg-black object-contain object-center sm:object-cover"
-  />
-</div>
+      <section className="relative flex min-h-0 flex-col overflow-hidden bg-black pt-16 sm:min-h-screen sm:items-center sm:pt-20">
+        <div className="absolute inset-0 z-0 hidden sm:block">
+          <img
+            src={`${import.meta.env.BASE_URL}hero-bg.png`}
+            alt=""
+            className="h-full w-full object-cover object-center"
+          />
+        </div>
 
-
-
-        <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 w-full py-8">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-10 sm:px-6 sm:py-8 lg:px-8">
           {/* Left content */}
           <div className="max-w-2xl space-y-5 sm:space-y-6">
             <div className="section-label">
@@ -115,10 +109,10 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               WITH<br />
               <span className="text-gold-400">PURPOSE</span>
             </h1>
-            <p className="text-white text-base sm:text-lg md:text-xl max-w-md leading-relaxed">
+            <p className="relative z-10 max-w-md text-base leading-relaxed text-white sm:text-lg md:text-xl">
               Personalized training, strength, and nutrition coaching in Hyderabad and Bangalore - built around your individual goals. 
             </p>
-            <div className="flex flex-wrap gap-3 sm:gap-4 pt-2">
+            <div className="relative z-10 flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:gap-4 sm:pt-2">
               <button
                 onClick={() => {
                   onNavigate('services');
@@ -126,16 +120,16 @@ export default function HomePage({ onNavigate }: HomePageProps) {
                     document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }, 0);
                 }}
-                className="btn-gold text-xs sm:text-sm"
+                className="btn-gold w-full px-5 py-3 text-xs sm:w-auto sm:text-sm"
               >
                 Start your journey
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button onClick={() => onNavigate('services')} className="border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-4 py-2 transition-colors text-xs sm:text-sm">
+              <button onClick={() => onNavigate('services')} className="w-full border border-yellow-400 px-4 py-3 text-xs text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black sm:w-auto sm:py-2 sm:text-sm">
                 View Services
               </button>
             </div>
-            <div className="flex items-center gap-4 sm:gap-6 pt-2 sm:pt-4">
+            <div className="relative z-10 flex items-center gap-4 pt-2 sm:gap-6 sm:pt-4">
               <div className="flex -space-x-3">
                 {[13211450, 31245340, 13885345, 20649585].map((id, i) => (
                   <img

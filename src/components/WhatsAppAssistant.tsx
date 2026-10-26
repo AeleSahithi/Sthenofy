@@ -19,7 +19,7 @@ export default function WhatsAppAssistant() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3 sm:bottom-7 sm:right-7">
+    <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-50 flex flex-col items-end gap-3 sm:bottom-7 sm:right-7">
       {isOpen && (
         <div className="w-[min(calc(100vw-2.5rem),20rem)] overflow-hidden rounded-2xl border border-[#25D366]/40 bg-ink-950 shadow-[0_12px_40px_rgba(0,0,0,0.45)]">
           <div className="flex items-center justify-between bg-[#25D366] px-4 py-3 text-black">
