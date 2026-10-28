@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  createBooking,
   fetchActiveServices,
   fetchBookedIntervals,
   fetchScheduleData,
@@ -10,9 +9,9 @@ import {
   type ServiceType,
   type WorkingHours,
 } from '@/lib/appointments';
-import { createPayUCheckout } from '@/lib/payments';
 
 const inputClass = 'w-full rounded-lg border border-ink-50/10 bg-ink-900 px-4 py-3 text-ink-50 outline-none focus:border-gold-400';
+const payUHostedLink = 'https://u.payu.in/8rW2Lhb18XZD';
 const today = new Date();
 const dateKey = (date: Date) => date.toISOString().slice(0, 10);
 const formatPrice = (service: ServiceType) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: service.currency }).format(service.price);
@@ -34,7 +33,6 @@ export default function AppointmentBooking() {
   const [month, setMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [paymentStatus] = useState(() => new URLSearchParams(window.location.search).get('payment'));
@@ -100,57 +98,13 @@ export default function AppointmentBooking() {
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (submitting) return;
     if (!service || !selectedSlot) {
       setError('Select a service, date, and time slot first.');
       return;
     }
-    setSubmitting(true);
     setError('');
-    setMessage('');
-    try {
-      const data = new FormData(event.currentTarget);
-      let booking;
-      try {
-        booking = await createBooking({
-          serviceTypeId: service.id,
-          customerName: String(data.get('name') || '').trim(),
-          customerEmail: String(data.get('email') || '').trim(),
-          customerPhone: String(data.get('phone') || '').trim(),
-          notes: String(data.get('notes') || '').trim(),
-          startsAt: selectedSlot.startsAt,
-        });
-      } catch (reason) {
-        throw new Error(`Unable to reserve the selected slot: ${reason instanceof Error ? reason.message : 'Please try again.'}`);
-      }
-      let checkout;
-      try {
-        checkout = await createPayUCheckout(booking);
-      } catch (reason) {
-        throw new Error(`Unable to prepare PayU checkout: ${reason instanceof Error ? reason.message : 'Please try again.'}`);
-      }
-      const checkoutUrl = new URL(checkout.action);
-      if (checkoutUrl.protocol !== 'https:' || !['test.payu.in', 'secure.payu.in'].includes(checkoutUrl.hostname)) {
-        throw new Error('PayU returned an unsupported checkout URL.');
-      }
-      const payuForm = document.createElement('form');
-      payuForm.method = 'POST';
-      payuForm.action = checkoutUrl.toString();
-      payuForm.style.display = 'none';
-      Object.entries(checkout.fields).forEach(([name, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = name;
-        input.value = value;
-        payuForm.appendChild(input);
-      });
-      document.body.appendChild(payuForm);
-      payuForm.submit();
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Unable to reserve this appointment.');
-    } finally {
-      setSubmitting(false);
-    }
+    setMessage('Opening PayU. The payment amount is managed by the provided PayU link.');
+    window.open(payUHostedLink, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -169,7 +123,7 @@ export default function AppointmentBooking() {
             <div className="grid grid-cols-7 gap-1">{days.map((day, index) => day ? <button key={dateKey(day)} disabled={dateKey(day) < dateKey(today)} onClick={() => { setSelectedDate(dateKey(day)); setSelectedSlot(null); }} className={`rounded-lg p-3 text-sm ${selectedDate === dateKey(day) ? 'bg-gold-400 text-ink-950' : 'glass text-ink-200 hover:text-gold-400'} disabled:opacity-30`} aria-label={`Select ${dateKey(day)}`}>{day.getDate()}</button> : <span key={`empty-${index}`} />)}</div>
             <div className="mt-7"><h3 className="font-display text-xl mb-3">AVAILABLE TIMES</h3>{slots.length === 0 ? <p className="text-ink-400 text-sm">No available times for this date.</p> : <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">{slots.map((slot) => <button key={slot.startsAt} onClick={() => setSelectedSlot(slot)} className={`rounded-lg border px-3 py-2 text-sm ${selectedSlot?.startsAt === slot.startsAt ? 'border-gold-400 bg-gold-400 text-ink-950' : 'border-ink-50/10 text-ink-200 hover:border-gold-400'}`}>{slot.localStart}</button>)}</div>}</div>
           </div>
-          <form onSubmit={(event) => void submit(event)} className="glass rounded-2xl p-5 sm:p-8 space-y-4"><h3 className="font-display text-2xl">REGISTRATION & PAYMENT</h3>{service && <p className="text-ink-300 text-sm">{service.name} · {formatPrice(service)} · {selectedSlot ? `${selectedDate} at ${selectedSlot.localStart}` : 'Select a time above'}</p>}<label className="block text-sm text-ink-200">Full name<input className={`${inputClass} mt-2`} name="name" required /></label><label className="block text-sm text-ink-200">Email<input className={`${inputClass} mt-2`} name="email" type="email" required /></label><label className="block text-sm text-ink-200">Phone<input className={`${inputClass} mt-2`} name="phone" required /></label><label className="block text-sm text-ink-200">Notes<textarea className={`${inputClass} mt-2`} name="notes" rows={3} /></label><label className="flex gap-2 text-sm text-ink-300"><input type="checkbox" required /> I agree to the privacy policy and terms.</label><button className="btn-gold w-full" disabled={submitting || !selectedSlot}>{submitting ? 'Opening PayU...' : 'Register & Pay with PayU'}</button>{message && <p className="text-green-400 text-sm">{message}</p>}{error && <p className="text-red-400 text-sm">{error}</p>}</form>
+          <form onSubmit={submit} className="glass rounded-2xl p-5 sm:p-8 space-y-4"><h3 className="font-display text-2xl">REGISTRATION & PAYMENT</h3>{service && <p className="text-ink-300 text-sm">{service.name} · {formatPrice(service)} · {selectedSlot ? `${selectedDate} at ${selectedSlot.localStart}` : 'Select a time above'}</p>}<p className="rounded-lg border border-gold-400/30 bg-gold-400/10 p-3 text-sm text-gold-200">PayU uses the amount configured in the hosted payment link.</p><label className="block text-sm text-ink-200">Full name<input className={`${inputClass} mt-2`} name="name" required /></label><label className="block text-sm text-ink-200">Email<input className={`${inputClass} mt-2`} name="email" type="email" required /></label><label className="block text-sm text-ink-200">Phone<input className={`${inputClass} mt-2`} name="phone" required /></label><label className="block text-sm text-ink-200">Notes<textarea className={`${inputClass} mt-2`} name="notes" rows={3} /></label><label className="flex gap-2 text-sm text-ink-300"><input type="checkbox" required /> I agree to the privacy policy and terms.</label><button className="btn-gold w-full" disabled={!selectedSlot}>Pay Now with PayU</button>{message && <p className="text-green-400 text-sm">{message}</p>}{error && <p className="text-red-400 text-sm">{error}</p>}</form>
         </div>}
       </div>
     </section>

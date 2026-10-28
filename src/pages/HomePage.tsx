@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Dumbbell, Heart, Flame, Users, Clock, Award, ArrowRight, Zap, Target, TrendingUp, Instagram,
+  Dumbbell, Heart, Flame, Users, Apple, Award, ArrowRight, Zap, Target, TrendingUp, Instagram,
 } from 'lucide-react';
 import ctaBackground from '@/assets/Gallery/vlcsnap-2025-07-20-12h21m46s983.png';
 import type { PageId } from '@/components/Navbar';
+import HeroVideo from '@/components/HeroVideo';
 
 interface HomePageProps {
   onNavigate: (page: PageId) => void;
@@ -12,7 +13,7 @@ interface HomePageProps {
 const features = [
   { icon: Dumbbell, title: 'PERSONALIZED TRAINING', desc: 'Goal-specific training designed around your fitness level, body, lifestyle, and progress—not a one-size-fits-all workout.' },
   { icon: Users, title: 'EXPERT COACHING', desc: 'Work with experienced coaches who help you train with better technique, structure, progression, and accountability.' },
-  { icon: Clock, title: 'PERFORMANCE NUTRITION', desc: 'Evidence-based nutrition guidance designed to support strength, endurance, body composition, metabolic health, and performance.' },
+  { icon: Apple, title: 'PERFORMANCE NUTRITION', desc: 'Evidence-based nutrition guidance designed to support strength, endurance, body composition, metabolic health, and performance.' },
   { icon: Heart, title: 'PROGRESS THAT LASTS', desc: 'Whether you\'re training online or working with a coach in person, your program evolves with your progress and goals.' },
 ];
 
@@ -20,7 +21,7 @@ const stats = [
   { value: 500, suffix: '+', label: 'Active Members' },
   { value: 2, suffix: '+', label: 'Expert Trainers' },
   { value: 10, suffix: '+', label: 'Weekly Classes' },
-  { value: 4, suffix: 'y', label: 'Years Strong' },
+  { value: 4, suffix: '+', label: 'Years Strong' },
 ];
 
 interface ReelTestimonial {
@@ -85,21 +86,22 @@ export default function HomePage({ onNavigate }: HomePageProps) {
   const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
   const testimonialLoop = [...reelTestimonials, ...reelTestimonials];
 
+  const goToBooking = () => {
+    onNavigate('services');
+    window.setTimeout(() => {
+      document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
+  };
+
   return (
     <div className="noise-overlay">
       {/* HERO */}
-      <section className="relative flex min-h-0 flex-col overflow-hidden bg-black pt-16 sm:min-h-screen sm:items-center sm:pt-20">
-        <div className="absolute inset-0 z-0 hidden sm:block">
-          <img
-            src={`${import.meta.env.BASE_URL}hero-bg.png`}
-            alt=""
-            className="h-full w-full object-cover object-center"
-          />
-        </div>
+      <section className="relative flex min-h-[640px] items-center overflow-hidden bg-black pt-16 sm:min-h-[760px] sm:pt-20 lg:min-h-screen">
+        <HeroVideo />
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-10 sm:px-6 sm:py-8 lg:px-8">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 py-12 sm:px-6 sm:py-16 lg:px-8">
           {/* Left content */}
-          <div className="max-w-2xl space-y-5 sm:space-y-6">
+          <div className="max-w-2xl animate-fade-up space-y-5 sm:space-y-6">
             <div className="section-label">
               <Zap className="w-4 h-4" />
               <span>Personal training and nutrition</span>
@@ -113,19 +115,11 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               Personalized training, strength, and nutrition coaching in Hyderabad and Bangalore - built around your individual goals. 
             </p>
             <div className="relative z-10 flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:gap-4 sm:pt-2">
-              <button
-                onClick={() => {
-                  onNavigate('services');
-                  window.setTimeout(() => {
-                    document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 0);
-                }}
-                className="btn-gold w-full px-5 py-3 text-xs sm:w-auto sm:text-sm"
-              >
+              <button onClick={goToBooking} className="btn-gold w-full px-5 py-3 text-xs sm:w-auto sm:text-sm">
                 Start your journey
                 <ArrowRight className="w-4 h-4" />
               </button>
-              <button onClick={() => onNavigate('services')} className="w-full border border-yellow-400 px-4 py-3 text-xs text-yellow-400 transition-colors hover:bg-yellow-400 hover:text-black sm:w-auto sm:py-2 sm:text-sm">
+              <button onClick={() => onNavigate('services')} className="btn-outline-gold w-full px-5 py-3 text-xs sm:w-auto sm:text-sm">
                 View Services
               </button>
             </div>
@@ -146,9 +140,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
           </div>
-
         </div>
-
       </section>
 
       {/* MARQUEE */}
@@ -230,13 +222,13 @@ export default function HomePage({ onNavigate }: HomePageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[
               { title: 'Endurance Sports Nutrition', desc: 'Fuel your performance, improve stamina, and recover faster with personalized nutrition.', img: 'https://images.pexels.com/photos/896058/pexels-photo-896058.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', tag: 'Most Popular' },
-              { title: 'Nutrition for Diabetes', desc: 'Manage blood sugar levels and build healthier eating habits with balanced nutrition.', img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', tag: 'High Energy' },
-              { title: 'Online Training Program', desc: 'Train from anywhere with customized workout plans and expert guidance.', img: 'https://images.pexels.com/photos/13849063/pexels-photo-13849063.jpeg', tag: 'Recovery' },
+              { title: 'Nutrition for Diabetes', desc: 'Manage blood sugar levels and build healthier eating habits with balanced nutrition.', img: 'https://images.pexels.com/photos/4761352/pexels-photo-4761352.jpeg?auto=compress&cs=tinysrgb&h=650&w=940', tag: 'Health First' },
+              { title: 'Online Training Program', desc: 'Train from anywhere with customized workout plans and expert guidance.', img: 'https://images.pexels.com/photos/13849063/pexels-photo-13849063.jpeg', tag: 'Train Anywhere' },
             ].map((program, i) => (
               <button key={i} className="card-hover group relative overflow-hidden rounded-2xl cursor-pointer text-left" onClick={() => onNavigate('services')}>
                 <div className="aspect-[3/4] relative">
                   <img src={program.img} alt={program.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-ink-550 via-ink-950/50 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                   <div className="absolute top-4 left-4">
                     <span className="glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">{program.tag}</span>
                   </div>
@@ -336,18 +328,18 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
         <div className="relative max-w-4xl mx-auto px-5 sm:px-6 text-center">
           <Award className="w-10 h-10 sm:w-12 sm:h-12 text-gold-500 mx-auto mb-6" />
-          <h2 className="font-display text-white sm:text-4xl md:text-6xl lg:text-7xl tracking-tight mb-6">
+          <h2 className="font-display text-3xl text-white sm:text-4xl md:text-6xl lg:text-7xl tracking-tight mb-6">
             YOUR TRANSFORMATION<br /><span className="text-gold-500">STARTS TODAY</span>
           </h2>
           <p className="text-white text-base sm:text-lg max-w-2xl mx-auto mb-8">
             Join 500+ members who decided to stop waiting. No contracts, no pressure — just results.
           </p>
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
-            <button onClick={() => onNavigate('packages')} className="btn-gold text-xs sm:text-sm">
+            <button onClick={goToBooking} className="btn-gold text-xs sm:text-sm">
               Make Appointment
               <ArrowRight className="w-4 h-4" />
             </button>
-            <button onClick={() => onNavigate('contact')} className="border border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-6 py-3 transition-colors text-xs sm:text-sm">
+            <button onClick={() => onNavigate('contact')} className="btn-outline-gold text-xs sm:text-sm">
               Contact Us
             </button>
           </div>

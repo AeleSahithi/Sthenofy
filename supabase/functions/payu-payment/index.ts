@@ -87,7 +87,20 @@ Deno.serve(async (request) => {
       const udf8 = '';
       const udf9 = '';
       const udf10 = '';
-      const hash = await sha512(`${payuKey}|${txnid}|${amount}|${productinfo}|${firstname}|${booking.customer_email}|${udf1}|${udf2}|${udf3}|${udf4}|${udf5}|||||||||||${payuSalt}`);
+      const hashInput = [
+        payuKey,
+        txnid,
+        amount,
+        productinfo,
+        firstname,
+        booking.customer_email,
+        udf1,
+        udf2,
+        udf3,
+        udf4,
+        udf5,
+      ].join('|');
+      const hash = await sha512(`${hashInput}||||||${payuSalt}`);
       const action = Deno.env.get('PAYU_ENVIRONMENT') === 'production'
         ? 'https://secure.payu.in/_payment'
         : 'https://test.payu.in/_payment';

@@ -39,14 +39,7 @@ export default {
       animation: {
         'fade-up': 'fadeUp 0.8s ease-out forwards',
         'fade-in': 'fadeIn 0.6s ease-out forwards',
-        'spin-slow': 'spin 20s linear infinite',
-        'spin-reverse': 'spinReverse 15s linear infinite',
-        'float': 'float 6s ease-in-out infinite',
-        'float-delayed': 'float 6s ease-in-out 2s infinite',
-        'pulse-ring': 'pulseRing 3s ease-out infinite',
         'marquee': 'marquee 30s linear infinite',
-        'barbell-rotate': 'barbellRotate 12s ease-in-out infinite',
-        'weight-bob': 'weightBob 4s ease-in-out infinite',
       },
       keyframes: {
         fadeUp: {
@@ -57,30 +50,9 @@ export default {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        spinReverse: {
-          '0%': { transform: 'rotate(360deg)' },
-          '100%': { transform: 'rotate(0deg)' },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-20px)' },
-        },
-        pulseRing: {
-          '0%': { transform: 'scale(0.8)', opacity: '0.8' },
-          '100%': { transform: 'scale(2)', opacity: '0' },
-        },
         marquee: {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
-        },
-        barbellRotate: {
-          '0%': { transform: 'rotateY(0deg) rotateX(15deg)' },
-          '50%': { transform: 'rotateY(180deg) rotateX(15deg)' },
-          '100%': { transform: 'rotateY(360deg) rotateX(15deg)' },
-        },
-        weightBob: {
-          '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
-          '50%': { transform: 'translateY(-15px) rotate(5deg)' },
         },
       },
     },

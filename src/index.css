@@ -62,6 +62,9 @@
   .btn-outline {
     @apply inline-flex items-center justify-center gap-2 px-8 py-4 border-2 border-ink-50/30 text-ink-50 font-body font-bold uppercase tracking-wider text-sm transition-all duration-300 hover:border-gold-400 hover:text-gold-400 active:scale-95;
   }
+  .btn-outline-gold {
+    @apply inline-flex items-center justify-center gap-2 px-8 py-4 border border-gold-400 text-gold-400 font-body font-bold uppercase tracking-wider text-sm transition-colors duration-300 hover:bg-gold-400 hover:text-black active:scale-95;
+  }
   .section-label {
     @apply inline-flex items-center gap-2 text-gold-400 font-body font-semibold uppercase tracking-[0.2em] text-xs;
   }
@@ -83,17 +86,6 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #ffc700;
-}
-
-/* 3D perspective utilities */
-.perspective-1000 {
-  perspective: 1000px;
-}
-.perspective-2000 {
-  perspective: 2000px;
-}
-.preserve-3d {
-  transform-style: preserve-3d;
 }
 
 /* Noise texture overlay */
