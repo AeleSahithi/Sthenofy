@@ -53,6 +53,27 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
 
+      # Prints where the FTP login starts and what is there, so the upload folder can be verified.
+      # The live site folder is the one that contains wp-config.php (before the switch) or index.html.
+      - name: Show FTP folder layout
+        continue-on-error: true
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          sudo apt-get install -y -qq lftp > /dev/null
+          host="${FTP_SERVER#ftp://}"; host="${host%/}"
+          lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "$host" -e "
+            set ftp:ssl-force yes; set net:max-retries 2; set net:timeout 20;
+            echo '== login folder:'; pwd;
+            echo '== login folder contents:'; cls -1a;
+            echo '== public_html:'; cls -1a public_html;
+            echo '== domains:'; cls -1a domains;
+            echo '== domains/sthenofy.com:'; cls -1a domains/sthenofy.com;
+            echo '== domains/sthenofy.com/public_html:'; cls -1a domains/sthenofy.com/public_html;
+            bye" 2>&1 | sed 's/^/  /'
+
       # public/.htaccess serves index.html for app pages and 404.html (with a 404 status) for unknown URLs.
       - name: Add 404 page
         run: cp dist/index.html dist/404.html
