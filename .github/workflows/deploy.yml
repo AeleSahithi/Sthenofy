@@ -61,7 +61,11 @@ jobs:
       # inside the site's public_html, set the repository variable FTP_SERVER_DIR to the path
       # from the FTP root, e.g. domains/sthenofy.com/public_html/ (must end with /).
       # Files this action did not upload (e.g. old WordPress files) are never deleted.
+      # Hostinger's FTPS data connection occasionally resets (ECONNRESET), so failed uploads are retried.
+      # The sync state file is only written after a complete upload, so a retry resumes safely.
       - name: Upload to Hostinger
+        id: upload1
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -70,3 +74,30 @@ jobs:
           protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
           local-dir: ./dist/
           server-dir: ${{ vars.FTP_SERVER_DIR || './public_html/' }}
+          timeout: 120000
+
+      - name: Upload to Hostinger (retry 1)
+        id: upload2
+        if: steps.upload1.outcome == 'failure'
+        continue-on-error: true
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+          local-dir: ./dist/
+          server-dir: ${{ vars.FTP_SERVER_DIR || './public_html/' }}
+          timeout: 120000
+
+      - name: Upload to Hostinger (retry 2)
+        if: steps.upload1.outcome == 'failure' && steps.upload2.outcome == 'failure'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ${{ vars.FTP_PROTOCOL || 'ftps' }}
+          local-dir: ./dist/
+          server-dir: ${{ vars.FTP_SERVER_DIR || './public_html/' }}
+          timeout: 120000
