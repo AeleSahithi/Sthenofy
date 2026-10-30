@@ -4,7 +4,8 @@ import { fileURLToPath, URL } from 'node:url';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/Sthenofy/',
+  // Served from the root of https://sthenofy.com (Hostinger).
+  base: '/',
 
   plugins: [react()],
   resolve: {

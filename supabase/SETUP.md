@@ -94,25 +94,34 @@ npm.cmd run dev -- --host 127.0.0.1
 Public website:
 
 ```text
-http://127.0.0.1:5173/Sthenofy/
+http://127.0.0.1:5173/
 ```
 
 Admin dashboard:
 
 ```text
-http://127.0.0.1:5173/Sthenofy/admin
+http://127.0.0.1:5173/admin
 ```
 
-## 5. GitHub Pages variables
+## 5. Hosting on Hostinger (https://sthenofy.com)
 
-Add both values as GitHub Actions **repository variables**:
+The site is a static build uploaded to Hostinger's `public_html` by `.github/workflows/deploy.yml` on every push to `main`. DNS stays on Hostinger; email (Google Workspace MX/TXT records) is not affected.
+
+`public/.htaccess` handles HTTPS + non-www redirects, 301 redirects from the old WordPress URLs, routing for app pages, and a real 404 status for unknown URLs.
+
+GitHub Actions configuration (**Settings → Secrets and variables → Actions**):
 
 ```text
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-publishable-anon-key
+Variables (or Secrets): SUPABASE_URL, SUPABASE_ANON_KEY
+Secrets:                FTP_SERVER, FTP_USERNAME, FTP_PASSWORD
+Optional variable:      FTP_PROTOCOL = ftp   (only if FTPS fails; default is ftps)
 ```
 
-You may use **Settings → Secrets and variables → Actions → Variables → New repository variable**. If you prefer, repository Actions secrets with the same names also work. The deployment workflow checks that both values exist before building, injects them at build time, and stops without publishing if either is missing. Publishing a post changes Supabase data and does not require a website redeployment.
+Create the FTP account in hPanel → **Files → FTP Accounts** with its directory set to `public_html`, so the account's root is the website folder. The workflow stops before building if any value is missing. It only uploads changed files and never deletes files it did not upload.
+
+In Supabase → **Authentication → URL Configuration**, set **Site URL** to `https://sthenofy.com` and add `https://sthenofy.com/admin` to **Redirect URLs** so admin password-reset links work.
+
+Publishing a blog post or changing prices changes Supabase data and does not require a redeploy.
 
 ## 6. Migrating legacy posts
 

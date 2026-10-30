@@ -1,0 +1,4 @@
+# Vite fingerprints every file in /assets (name-HASH.ext), so they never change in place.
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

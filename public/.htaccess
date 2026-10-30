@@ -1,0 +1,55 @@
+# STHENOFY — Hostinger (LiteSpeed/Apache) configuration for https://sthenofy.com
+# Deployed to public_html by .github/workflows/deploy.yml.
+
+Options -Indexes
+DirectoryIndex index.html
+# Unknown URLs get a real 404 status; the app renders its "Page not found" screen.
+ErrorDocument 404 /404.html
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # --- One canonical origin: HTTPS, no www ---
+  RewriteCond %{HTTPS} !=on [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://sthenofy.com%{REQUEST_URI} [R=301,L,NE]
+
+  # --- Old WordPress URLs -> closest new page (keeps search ranking) ---
+  # Blog posts: /2025/09/04/some-post/ -> /blog/some-post
+  RewriteRule ^[0-9]{4}/[0-9]{2}/[0-9]{2}/([^/]+)/?$ /blog/$1 [R=301,L]
+  RewriteRule ^(category|tag|feed|author)(/.*)?$ /blog/ [R=301,L]
+  RewriteRule ^privacy-policy(-2)?/?$ /privacy/ [R=301,L]
+  RewriteRule ^refund-policy/?$ /refund/ [R=301,L]
+  RewriteRule ^terms-of-service/?$ /terms/ [R=301,L]
+  RewriteRule ^(service|offline-training|pricing-page)(/.*)?$ /services/ [R=301,L]
+  RewriteRule ^(team|team-two|fitmas-team)(/.*)?$ /trainers/ [R=301,L]
+  RewriteRule ^gallery-page(-two)?/?$ /about/ [R=301,L]
+  # Leftover theme demo content (shop, products, sample pages, projects)
+  RewriteRule ^(home-two|home-three|sample-page(-2)?|shop(-2)?|cart(-2)?|checkout(-2)?|my-account(-2)?|projects|product|product-category|product-tag|fitmas-project|fitmas-project-category|footer|elementor-hf)(/.*)?$ / [R=301,L]
+
+  # --- App pages: canonical trailing slash ---
+  RewriteRule ^(services|trainers|about|blog|contact|privacy|terms|refund)$ /$1/ [R=301,L]
+
+  # Real files and folders are served as-is.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # App pages (including /blog/<post> and /admin) are rendered by index.html.
+  RewriteRule ^(services|trainers|about|blog|contact|privacy|terms|refund|admin)(/.*)?$ /index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Always fetch the latest page shell; hashed files in /assets are cached (see assets/.htaccess).
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Deployment bookkeeping file written by the FTP deploy action.
+<Files ".ftp-deploy-sync-state.json">
+  Require all denied
+</Files>

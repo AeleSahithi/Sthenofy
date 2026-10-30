@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /Sthenofy/admin
+Disallow: /admin
 
-Sitemap: https://aelesahithi.github.io/Sthenofy/sitemap.xml
+Sitemap: https://sthenofy.com/sitemap.xml

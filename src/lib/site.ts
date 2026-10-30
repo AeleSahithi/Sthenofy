@@ -1,7 +1,7 @@
 import type { PageId } from '@/components/Navbar';
 
-/** Public production URL (GitHub Pages). Update here, in index.html, and in public/robots.txt + sitemap.xml if the domain changes. */
-export const SITE_URL = 'https://aelesahithi.github.io/Sthenofy/';
+/** Public production URL (Hostinger). Update here, in index.html, public/.htaccess, and public/robots.txt + sitemap.xml if the domain changes. */
+export const SITE_URL = 'https://sthenofy.com/';
 
 export const CONTACT_PHONE_DISPLAY = '+91 90356 54943';
 export const CONTACT_PHONE_TEL = 'tel:+919035654943';
@@ -61,7 +61,7 @@ const aliases: Record<string, PageId> = { gallery: 'gallery', 'privacy-policy': 
 
 export function pathFor(page: PageId): string {
   const path = routes[page].path;
-  // Trailing slash matches the per-route folders GitHub Pages serves (avoids a redirect).
+  // Trailing slash is the canonical form; public/.htaccess redirects /services to /services/.
   return path ? `${base}${path}/` : base;
 }
 
