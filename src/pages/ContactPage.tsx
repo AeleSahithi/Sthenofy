@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { MapPin, Phone, Mail, Send, Check } from 'lucide-react';
+import { MapPin, Phone, Mail, Send, Check, MessageCircle } from 'lucide-react';
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, PHONE_PATTERN, PHONE_TITLE, SUPPORT_EMAIL, whatsappLink } from '@/lib/site';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -14,6 +15,7 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitted) return;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     const subject = `Sthenofy contact enquiry: ${form.interest}`;
     const body = [
@@ -24,12 +26,10 @@ export default function ContactPage() {
       '',
       form.message,
     ].join('\n');
-    window.location.href = `mailto:support@sthenofy.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    // The site has no mail server: this opens the visitor's email app with the message filled in.
+    window.location.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSubmitted(true);
-    timeoutRef.current = setTimeout(() => {
-      setSubmitted(false);
-      setForm({ name: '', email: '', phone: '', interest: 'General Inquiry', message: '' });
-    }, 4000);
+    timeoutRef.current = setTimeout(() => setSubmitted(false), 8000);
   };
 
   const inputClass = 'w-full bg-ink-900 border border-ink-50/10 rounded-xl px-4 py-3 text-ink-50 placeholder-ink-400 focus:border-gold-400 focus:outline-none transition-colors';
@@ -61,8 +61,9 @@ export default function ContactPage() {
               {[
                 { icon: MapPin, title: 'Visit Us', value: '29th Main, MCHS Colony, BTM 2nd stage, Bengaluru' },
                 { icon: MapPin, title: 'Visit Us', value: 'Krishnapuram colony, Mailardevpally, Hyderabad' },
-                { icon: Phone, title: 'Call Us', value: '+91 90356 54943' },
-                { icon: Mail, title: 'Email Us', value: 'support@sthenofy.com', href: 'mailto:support@sthenofy.com' },
+                { icon: Phone, title: 'Call Us', value: CONTACT_PHONE_DISPLAY, href: CONTACT_PHONE_TEL },
+                { icon: MessageCircle, title: 'WhatsApp', value: 'Chat with us on WhatsApp', href: whatsappLink('Hi Sthenofy, I have a question.'), external: true },
+                { icon: Mail, title: 'Email Us', value: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
               ].map((item, i) => (
                 <div key={i} className="glass rounded-2xl p-6 flex items-start gap-4 card-hover">
                   <div className="w-12 h-12 rounded-xl bg-gold-400/10 flex items-center justify-center shrink-0">
@@ -71,7 +72,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-display text-lg uppercase tracking-wide mb-1">{item.title}</h3>
                     {item.href ? (
-                      <a href={item.href} className="text-ink-300 text-sm whitespace-pre-line leading-relaxed hover:text-gold-400 transition-colors">{item.value}</a>
+                      <a href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="text-ink-300 text-sm whitespace-pre-line leading-relaxed hover:text-gold-400 transition-colors">{item.value}</a>
                     ) : (
                       <p className="text-ink-300 text-sm whitespace-pre-line leading-relaxed">{item.value}</p>
                     )}
@@ -94,7 +95,9 @@ export default function ContactPage() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       className={inputClass}
-                      placeholder="John Doe"
+                      autoComplete="name"
+                      maxLength={100}
+                      placeholder="Your full name"
                     />
                   </div>
                   <div>
@@ -106,7 +109,8 @@ export default function ContactPage() {
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
                       className={inputClass}
-                      placeholder="john@email.com"
+                      autoComplete="email"
+                      placeholder="you@example.com"
                     />
                   </div>
                 </div>
@@ -119,7 +123,11 @@ export default function ContactPage() {
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       className={inputClass}
-                      placeholder="+1 (555) 000-0000"
+                      autoComplete="tel"
+                      inputMode="tel"
+                      pattern={PHONE_PATTERN}
+                      title={PHONE_TITLE}
+                      placeholder="+91 98765 43210"
                     />
                   </div>
                   <div>
@@ -158,7 +166,7 @@ export default function ContactPage() {
                   >
                     {submitted ? (
                       <>
-                        <Check className="w-5 h-5" /> Message Sent!
+                        <Check className="w-5 h-5" /> Email App Opened
                       </>
                     ) : (
                       <>
@@ -166,6 +174,12 @@ export default function ContactPage() {
                       </>
                     )}
                   </button>
+                  {submitted && (
+                    <p className="mt-3 text-sm text-ink-300">
+                      Your message is ready in your email app — press <b>Send</b> there to deliver it. If nothing opened, email us at{' '}
+                      <a href={`mailto:${SUPPORT_EMAIL}`} className="text-gold-500 underline">{SUPPORT_EMAIL}</a> or message us on WhatsApp.
+                    </p>
+                  )}
                 </div>
               </form>
             </div>
@@ -180,7 +194,7 @@ export default function ContactPage() {
             {[
               {
                 title: 'Bengaluru',
-                address: 'H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage, Bengaluru, 560076.1',
+                address: 'H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage, Bengaluru, 560076',
                 query: 'H No 162 8th cross 29th Main MCHS Colony BTM 2nd stage Bengaluru 560076',
               },
               {

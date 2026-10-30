@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import sthenofyLogo from '@/assets/sthenofy-logo-black.png';
+import { linkProps } from '@/lib/site';
 
-export type PageId = 'home' | 'packages' | 'services' | 'trainers' | 'gallery' | 'blog' | 'contact' | 'privacy' | 'terms' | 'refund';
+export type PageId = 'home' | 'services' | 'trainers' | 'gallery' | 'blog' | 'contact' | 'privacy' | 'terms' | 'refund' | 'not-found';
 
 interface NavbarProps {
   currentPage: PageId;
@@ -11,7 +12,6 @@ interface NavbarProps {
 
 const navItems: { id: PageId; label: string }[] = [
   { id: 'home', label: 'Home' },
-  //{ id: 'packages', label: 'Packages' },
   { id: 'services', label: 'Services' },
   { id: 'trainers', label: 'Trainers' },
   { id: 'gallery', label: 'About Us' },
@@ -36,13 +36,13 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
     } else {
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setMobileOpen(false); };
+    if (mobileOpen) window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', closeOnEscape);
+    };
   }, [mobileOpen]);
-
-  const handleNav = (page: PageId) => {
-    onNavigate(page);
-    setMobileOpen(false);
-  };
 
   return (
     <>
@@ -51,8 +51,8 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
       >
         <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
           {/*  Logo */}
-          <button
-          onClick={() => handleNav('home')}
+          <a
+          {...linkProps('home', onNavigate, () => setMobileOpen(false))}
           className="flex items-center shrink-0 z-[70] relative group"
           aria-label="Sthenofy Home"
           >
@@ -61,15 +61,16 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
            alt="Sthenofy"
            className="h-16 sm:h-16 w-36 sm:w-44 object-contain transition-transform duration-300 group-hover:scale-105"
           />
-       </button>
+       </a>
 
           {/* Desktop nav */}
           <ul className="hidden lg:flex items-center gap-1">
             {navItems.map((item) => (
               <li key={item.id}>
-                <button
-                  onClick={() => handleNav(item.id)}
-                  className={`px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
+                <a
+                  {...linkProps(item.id, onNavigate)}
+                  aria-current={currentPage === item.id ? 'page' : undefined}
+                  className={`inline-block px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
                     currentPage === item.id ? 'text-gold-500' : 'text-black hover:text-gold-500'
                   }`}
                 >
@@ -79,7 +80,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                       currentPage === item.id ? 'w-8' : 'w-0 group-hover:w-8'
                     }`}
                   />
-                </button>
+                </a>
               </li>
             ))}
           </ul>
@@ -94,7 +95,9 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="lg:hidden w-10 h-10 flex items-center justify-center text-black z-[70] relative"
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
           >
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -103,6 +106,8 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
 
       {/* Mobile menu overlay */}
       <div
+        id="mobile-menu"
+        aria-hidden={!mobileOpen}
         className={`fixed inset-0 z-50 lg:hidden transition-all duration-500 ${
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
@@ -118,9 +123,11 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
             <X className="w-6 h-6" />
           </button>
           {navItems.map((item, i) => (
-            <button
+            <a
               key={item.id}
-              onClick={() => handleNav(item.id)}
+              {...linkProps(item.id, onNavigate, () => setMobileOpen(false))}
+              tabIndex={mobileOpen ? 0 : -1}
+              aria-current={currentPage === item.id ? 'page' : undefined}
               className={`font-display text-3xl sm:text-4xl tracking-wider transition-all duration-500 py-2 ${
                 currentPage === item.id ? 'text-gold-500' : 'text-black'
               }`}
@@ -131,9 +138,9 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               }}
             >
               {item.label}
-            </button>
+            </a>
           ))}
-          <button onClick={handleBookingNavigation} className="btn-gold mt-4">
+          <button onClick={handleBookingNavigation} tabIndex={mobileOpen ? 0 : -1} className="btn-gold mt-4">
             Join Now
           </button>
         </nav>

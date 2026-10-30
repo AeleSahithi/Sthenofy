@@ -1,22 +1,17 @@
 import { Flame, MessageCircle, MapPin } from 'lucide-react';
 import { useState } from 'react';
-import type { PageId } from '@/components/Navbar';
 import AppointmentBooking from '@/components/appointments/AppointmentBooking';
+import { whatsappLink as buildWhatsappLink } from '@/lib/site';
 
-import fatLossImg from '@/assets/Services/nutrition for fat loss.png';
-import menopauseImg from '@/assets/Services/pre and peri menopause.png';
-import onlineTrainingImg from '@/assets/Services/online training program.png';
-import Endurancesportsnutrition from '@/assets/Services/Endurance sports nutrition.png';
-import NutritionforDiabetes from '@/assets/Services/Nutrition for Diabetes.png';
-import NutritionforPCOD from '@/assets/Services/Nutrition for PCOD PCOS.png';
+import fatLossImg from '@/assets/Services/nutrition for fat loss.webp';
+import menopauseImg from '@/assets/Services/pre and peri menopause.webp';
+import onlineTrainingImg from '@/assets/Services/online training program.webp';
+import Endurancesportsnutrition from '@/assets/Services/Endurance sports nutrition.webp';
+import NutritionforDiabetes from '@/assets/Services/Nutrition for Diabetes.webp';
+import NutritionforPCOD from '@/assets/Services/Nutrition for PCOD PCOS.webp';
 
-
-interface ClassesPageProps {
-  onNavigate: (page: PageId) => void;
-}
 
 const serviceViews = ['All', 'Offline Services'] as const;
-const whatsappNumber = '919346122966';
 
 const classes = [
   { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: Endurancesportsnutrition },
@@ -27,10 +22,11 @@ const classes = [
   { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: onlineTrainingImg },
 ];
 
-export default function ClassesPage({ onNavigate }: ClassesPageProps) {
+export default function ClassesPage() {
   const [activeView, setActiveView] = useState<(typeof serviceViews)[number]>('All');
   const whatsappLink = (location: string) =>
-    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hi Sthenofy, I am interested in offline training in ${location}. Please share the available timings and details.`)}`;
+    buildWhatsappLink(`Hi Sthenofy, I am interested in offline training in ${location}. Please share the available timings and details.`);
+  const goToBooking = () => document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
     <div className="noise-overlay min-h-screen pt-20">
@@ -78,7 +74,7 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
             {classes.map((cls, i) => (
               <div key={i} className="card-hover group glass rounded-2xl overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
-                  <img src={cls.img} alt={cls.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={cls.img} alt={cls.name} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-ink-850 to-transparent" />
                   <div className="absolute top-3 left-3">
                     <span className="glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">{cls.category}</span>
@@ -87,7 +83,7 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
                 <div className="p-6">
                   <h3 className="font-display text-2xl uppercase tracking-wide mb-2 group-hover:text-gold-400 transition-colors">{cls.name}</h3>
                   <p className="text-ink-300 text-sm leading-relaxed mb-4">{cls.desc}</p>
-                  <button onClick={() => onNavigate('packages')} className="w-full btn-outline text-xs py-3">
+                  <button onClick={goToBooking} className="w-full btn-outline text-xs py-3">
                     GET STARTED 
                   </button>
                 </div>
@@ -104,7 +100,7 @@ export default function ClassesPage({ onNavigate }: ClassesPageProps) {
                 <div key={location} className="rounded-2xl border border-gold-400/20 bg-white p-6 text-center">
                   <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-ink-950"><MapPin className="h-6 w-6" /></div>
                   <h3 className="font-display text-2xl text-black uppercase tracking-wide mb-5">{location}</h3>
-                  <a href={whatsappLink(location)} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-bold text-black transition-transform hover:scale-105"><MessageCircle className="h-4 w-4" /> Chat on WhatsApp</a>
+                  <a href={whatsappLink(location)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 py-3 text-sm font-bold text-black transition-transform hover:scale-105"><MessageCircle className="h-4 w-4" /> Chat on WhatsApp</a>
                 </div>
               ))}
             </div>

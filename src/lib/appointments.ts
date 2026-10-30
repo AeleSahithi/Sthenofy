@@ -1,6 +1,8 @@
 import { requireSupabase } from './supabase';
 
 export const APPOINTMENT_TIMEZONE = 'Asia/Kolkata';
+// Every appointment, admin block and admin booking is a one-hour block.
+export const APPOINTMENT_SLOT_MINUTES = 60;
 
 export interface ServiceType {
   id: string;
@@ -34,21 +36,26 @@ export interface ScheduleException {
   created_at: string;
 }
 
-export type BookingStatus = 'hold' | 'confirmed' | 'cancelled' | 'expired';
+export type BookingStatus = 'hold' | 'confirmed' | 'blocked' | 'cancelled' | 'expired';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
 export interface Booking {
   id: string;
-  service_type_id: string;
+  service_type_id: string | null;
   user_id: string | null;
   customer_name: string;
-  customer_email: string;
+  customer_email: string | null;
   customer_phone: string | null;
   starts_at: string;
   ends_at: string;
   status: BookingStatus;
   payment_status: PaymentStatus;
+  payment_provider: 'payu' | 'payu_link' | 'manual';
   payment_reference: string | null;
+  payment_submitted_at: string | null;
+  /** Service price copied by the database when the booking was created. */
+  amount: number | null;
+  currency: string | null;
   hold_expires_at: string | null;
   notes: string | null;
   created_at: string;
@@ -74,6 +81,15 @@ export interface CreateBookingInput {
   customerPhone?: string;
   notes?: string;
   holdMinutes?: number;
+}
+
+/** Static PayU payment link. It cannot receive a booking ID or amount from this site. */
+export const PAYU_PAYMENT_LINK = 'https://u.payu.in/8rW2Lhb18XZD';
+/** How long a customer's reservation is held while they pay via the link. */
+export const PAYMENT_HOLD_MINUTES = 60;
+
+export function formatMoney(amount: number, currency = 'INR'): string {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
 }
 
 export async function fetchActiveServices(): Promise<ServiceType[]> {
@@ -130,49 +146,48 @@ function localTime(date: Date): string {
   }).format(date);
 }
 
-export function getAvailabilitySlots(
+export type BookedInterval = Pick<Booking, 'starts_at' | 'ends_at'>;
+
+export function overlapsInterval(slot: AvailabilitySlot, interval: BookedInterval): boolean {
+  return new Date(interval.starts_at).getTime() < new Date(slot.endsAt).getTime()
+    && new Date(interval.ends_at).getTime() > new Date(slot.startsAt).getTime();
+}
+
+/** All upcoming one-hour blocks for a date according to working hours and exceptions. */
+export function getDaySlots(
   date: string,
-  service: Pick<ServiceType, 'duration_minutes'>,
   workingHours: WorkingHours[],
   exceptions: ScheduleException[],
-  existingBookings: Pick<Booking, 'starts_at' | 'ends_at' | 'status' | 'hold_expires_at'>[] = [],
 ): AvailabilitySlot[] {
   const exception = exceptions.find((item) => item.exception_date === date);
   if (exception?.is_closed) return [];
   const dayOfWeek = new Date(`${date}T12:00:00+05:30`).getUTCDay();
   const schedules = exception
-    ? [{ ...exception, slot_interval_minutes: 30 }]
+    ? [exception]
     : workingHours.filter((item) => item.day_of_week === dayOfWeek);
   const now = Date.now();
-  const slots: AvailabilitySlot[] = [];
+  const slotMs = APPOINTMENT_SLOT_MINUTES * 60_000;
+  const slots = new Map<string, AvailabilitySlot>();
 
   for (const schedule of schedules) {
     if (!schedule.start_time || !schedule.end_time) continue;
-    const interval = 'slot_interval_minutes' in schedule
-      ? schedule.slot_interval_minutes
-      : 30;
     let start = istToUtc(date, schedule.start_time);
     const endOfSchedule = istToUtc(date, schedule.end_time);
-    while (start.getTime() + service.duration_minutes * 60_000 <= endOfSchedule.getTime()) {
-      const end = new Date(start.getTime() + service.duration_minutes * 60_000);
-      const blocked = existingBookings.some((booking) => {
-        if (booking.status === 'cancelled' || booking.status === 'expired') return false;
-        if (booking.status === 'hold' && booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() <= now) return false;
-        return new Date(booking.starts_at).getTime() < end.getTime()
-          && new Date(booking.ends_at).getTime() > start.getTime();
-      });
-      if (start.getTime() > now && !blocked) {
-        slots.push({
+    while (start.getTime() + slotMs <= endOfSchedule.getTime()) {
+      const end = new Date(start.getTime() + slotMs);
+      if (start.getTime() > now) {
+        slots.set(start.toISOString(), {
           startsAt: start.toISOString(),
           endsAt: end.toISOString(),
-          localStart: localTime(start),
-          localEnd: localTime(end),
+          localStart: localTime(start).slice(0, 5),
+          localEnd: localTime(end).slice(0, 5),
         });
       }
-      start = new Date(start.getTime() + interval * 60_000);
+      start = end;
     }
   }
-  return slots;
+  // Overlapping working-hour rows (e.g. two Monday ranges) must not produce duplicate blocks.
+  return [...slots.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 
 export async function createBooking(input: CreateBookingInput): Promise<Booking> {
@@ -183,19 +198,36 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
     p_starts_at: input.startsAt,
     p_customer_phone: input.customerPhone ?? null,
     p_notes: input.notes ?? null,
-    p_hold_minutes: input.holdMinutes ?? 15,
+    p_hold_minutes: input.holdMinutes ?? PAYMENT_HOLD_MINUTES,
   });
   if (error) throw error;
   return data as Booking;
 }
 
-export async function fetchBookedIntervals(startsAt: string, endsAt: string): Promise<Pick<Booking, 'starts_at' | 'ends_at'>[]> {
+/** Records the customer's PayU transaction ID for admin verification; never marks the booking paid. */
+export async function submitPaymentReference(bookingId: string, customerEmail: string, reference: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('submit_payment_reference', {
+    p_booking_id: bookingId,
+    p_customer_email: customerEmail,
+    p_reference: reference,
+  });
+  if (error) throw error;
+}
+
+/** Admin: all services, including inactive ones (RLS only exposes those to admins). */
+export async function fetchAllServices(): Promise<ServiceType[]> {
+  const { data, error } = await requireSupabase().from('service_types').select('*').order('name');
+  if (error) throw error;
+  return (data ?? []) as ServiceType[];
+}
+
+export async function fetchBookedIntervals(startsAt: string, endsAt: string): Promise<BookedInterval[]> {
   const { data, error } = await requireSupabase().rpc('get_booked_intervals', {
     p_starts_at: startsAt,
     p_ends_at: endsAt,
   });
   if (error) throw error;
-  return (data ?? []) as Pick<Booking, 'starts_at' | 'ends_at'>[];
+  return (data ?? []) as BookedInterval[];
 }
 
 export async function cancelBooking(id: string, customerEmail?: string): Promise<Booking> {
@@ -213,11 +245,91 @@ export async function fetchAdminBookings(): Promise<AdminBooking[]> {
   return (data ?? []) as AdminBooking[];
 }
 
+function friendlySlotError(error: { code?: string; message: string }): Error {
+  return new Error(error.code === '23P01' ? 'That time overlaps another booking or blocked slot.' : error.message);
+}
+
 export async function rescheduleBooking(booking: AdminBooking, startsAt: string): Promise<void> {
-  if (!booking.service_types?.duration_minutes) throw new Error('Booking service duration is unavailable.');
-  const endsAt = new Date(new Date(startsAt).getTime() + booking.service_types.duration_minutes * 60_000).toISOString();
+  const length = new Date(booking.ends_at).getTime() - new Date(booking.starts_at).getTime();
+  const endsAt = new Date(new Date(startsAt).getTime() + length).toISOString();
   const { error } = await requireSupabase().from('bookings').update({ starts_at: startsAt, ends_at: endsAt, updated_at: new Date().toISOString() }).eq('id', booking.id);
-  if (error) throw error;
+  if (error) throw friendlySlotError(error);
+}
+
+export type AdminSlotInput =
+  | { kind: 'blocked'; startsAt: string; hours: number; reason?: string }
+  | {
+    kind: 'booking';
+    startsAt: string;
+    serviceTypeId: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    notes?: string;
+    paymentStatus: Extract<PaymentStatus, 'pending' | 'paid'>;
+  };
+
+/** Admin-only: block time when unavailable, or book a slot on behalf of a customer. */
+export async function createAdminSlot(input: AdminSlotInput): Promise<void> {
+  const client = requireSupabase();
+  // Expired payment holds still occupy the overlap constraint until they are released.
+  const { error: expireError } = await client.rpc('expire_stale_holds');
+  if (expireError) throw expireError;
+  const startsAt = new Date(input.startsAt);
+  const hours = input.kind === 'blocked' ? input.hours : 1;
+  const endsAt = new Date(startsAt.getTime() + hours * APPOINTMENT_SLOT_MINUTES * 60_000);
+  const values = input.kind === 'blocked'
+    ? {
+      service_type_id: null,
+      customer_name: input.reason?.trim() || 'Unavailable',
+      customer_email: null,
+      status: 'blocked',
+      payment_status: 'pending',
+    }
+    : {
+      service_type_id: input.serviceTypeId,
+      customer_name: input.customerName.trim(),
+      customer_email: input.customerEmail.trim().toLowerCase(),
+      customer_phone: input.customerPhone?.trim() || null,
+      notes: input.notes?.trim() || null,
+      status: 'confirmed',
+      payment_status: input.paymentStatus,
+    };
+  const { error } = await client.from('bookings').insert({
+    ...values,
+    payment_provider: 'manual',
+    starts_at: startsAt.toISOString(),
+    ends_at: endsAt.toISOString(),
+  });
+  if (error) throw friendlySlotError(error);
+}
+
+/** Admin: confirm a booking after verifying the payment in the PayU dashboard (or receiving cash/UPI). */
+export async function markBookingPaid(id: string, reference?: string): Promise<void> {
+  const { error } = await requireSupabase().from('bookings').update({
+    status: 'confirmed',
+    payment_status: 'paid',
+    hold_expires_at: null,
+    ...(reference?.trim() ? { payment_reference: reference.trim() } : {}),
+    updated_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) throw friendlySlotError(error);
+}
+
+/** Whether a booking currently occupies its time (expired holds do not). */
+export function isActiveBooking(booking: Pick<Booking, 'status' | 'hold_expires_at'>): boolean {
+  if (booking.status === 'confirmed' || booking.status === 'blocked') return true;
+  return booking.status === 'hold' && !!booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() > Date.now();
+}
+
+/** Converts an Asia/Kolkata date and HH:MM time to a UTC ISO string. */
+export function localDateTimeToIso(date: string, time: string): string {
+  return istToUtc(date, time).toISOString();
+}
+
+/** YYYY-MM-DD for a calendar cell built from local year/month/day (no UTC shift). */
+export function calendarDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export async function updateWorkingHours(id: string, values: Partial<WorkingHours>): Promise<void> {

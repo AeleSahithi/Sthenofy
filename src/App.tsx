@@ -1,23 +1,30 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import Navbar, { type PageId } from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import HomePage from '@/pages/HomePage';
-import PackagesPage from '@/pages/PackagesPage';
 import TrainersPage from '@/pages/TrainersPage';
 import GalleryPage from '@/pages/GalleryPage';
-import BlogPage from '@/pages/BlogPage';
 import ContactPage from '@/pages/ContactPage';
 import ServicesPage from '@/pages/ServicesPage';
 import LegalPage from '@/pages/LegalPage';
-import AdminLoginPage from '@/pages/AdminLoginPage';
-import AdminDashboardPage from '@/pages/AdminDashboardPage';
+import NotFoundPage from '@/pages/NotFoundPage';
 import { supabase } from '@/lib/supabase';
+import { applyPageMeta, pageFromPath, pathFor } from '@/lib/site';
 import WhatsAppAssistant from '@/components/WhatsAppAssistant';
+
+// Loaded on demand: they pull in the rich-text editor, which most visitors never need.
+const BlogPage = lazy(() => import('@/pages/BlogPage'));
+const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage'));
+const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+
+const pageFallback = <div className="min-h-screen pt-20 flex items-center justify-center text-ink-300">Loading...</div>;
 
 function AdminRoute() {
   const [state, setState] = useState<'loading' | 'login' | 'dashboard' | 'denied'>('loading');
 
   useEffect(() => {
+    document.title = 'Admin — STHENOFY';
+    document.head.querySelector('meta[name="robots"]')?.setAttribute('content', 'noindex, nofollow');
     const client = supabase;
     if (!client) { setState('denied'); return; }
     let mounted = true;
@@ -40,36 +47,39 @@ function AdminRoute() {
   }, []);
 
   if (state === 'loading') return <main className="min-h-screen bg-ink-950 flex items-center justify-center text-ink-300">Checking access...</main>;
-  if (state === 'login') return <AdminLoginPage />;
+  if (state === 'login') return <Suspense fallback={pageFallback}><AdminLoginPage /></Suspense>;
   if (state === 'denied') return <main className="min-h-screen bg-ink-950 flex items-center justify-center px-5 text-center"><div><h1 className="font-display text-4xl text-gold-400 mb-3">ACCESS UNAVAILABLE</h1><p className="text-ink-300">Configure Supabase and authorize this account as an administrator.</p></div></main>;
-  return <AdminDashboardPage />;
+  return <Suspense fallback={pageFallback}><AdminDashboardPage /></Suspense>;
 }
 
 export default function App() {
-  const [page, setPage] = useState<PageId>(() => {
-    const path = window.location.pathname;
-    if (path.includes('/blog')) return 'blog';
-    if (path.includes('/services')) return 'services';
-    if (path.includes('/privacy')) return 'privacy';
-    if (path.includes('/terms')) return 'terms';
-    if (path.includes('/refund')) return 'refund';
-    return 'home';
-  });
-  const isAdminRoute = window.location.pathname.includes('/admin');
+  const [page, setPage] = useState<PageId>(() => pageFromPath(window.location.pathname));
+  const isAdminRoute = /\/admin(\/|$)/.test(window.location.pathname);
 
-  const handleNavigate = (newPage: PageId) => {
+  // Every page has a real URL, so links can be shared, refreshed, and opened directly.
+  const handleNavigate = useCallback((newPage: PageId) => {
+    const target = pathFor(newPage);
+    if (window.location.pathname !== target) window.history.pushState({}, '', target);
+    // Lets pages that read the URL (e.g. an open blog post) react, and keeps one code path with Back/Forward.
+    window.dispatchEvent(new PopStateEvent('popstate'));
     setPage(newPage);
-  };
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => setPage(pageFromPath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [page]);
+    if (!isAdminRoute) applyPageMeta(page);
+  }, [page, isAdminRoute]);
 
   const renderPage = () => {
     switch (page) {
       case 'home': return <HomePage onNavigate={handleNavigate} />;
-      case 'packages': return <PackagesPage onNavigate={handleNavigate} />;
-      case 'services': return <ServicesPage onNavigate={handleNavigate} />;
+      case 'services': return <ServicesPage />;
       case 'trainers': return <TrainersPage />;
       case 'gallery': return <GalleryPage />;
       case 'blog': return <BlogPage />;
@@ -77,7 +87,7 @@ export default function App() {
       case 'privacy': return <LegalPage type="privacy" />;
       case 'terms': return <LegalPage type="terms" />;
       case 'refund': return <LegalPage type="refund" />;
-      default: return <HomePage onNavigate={handleNavigate} />;
+      default: return <NotFoundPage onNavigate={handleNavigate} />;
     }
   };
 
@@ -85,8 +95,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-ink-950 text-ink-50 overflow-x-hidden">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[80] focus:bg-gold-400 focus:px-4 focus:py-2 focus:text-black">Skip to content</a>
       <Navbar currentPage={page} onNavigate={handleNavigate} />
-      <main>{renderPage()}</main>
+      <main id="main-content"><Suspense fallback={pageFallback}>{renderPage()}</Suspense></main>
       <Footer onNavigate={handleNavigate} />
       <WhatsAppAssistant />
     </div>

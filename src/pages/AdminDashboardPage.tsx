@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
 
   const logout = async () => {
     await requireSupabase().auth.signOut();
-    window.location.assign('/admin');
+    window.location.assign(`${import.meta.env.BASE_URL}admin`);
   };
 
   const save = async (event: React.FormEvent<HTMLFormElement>, requestedStatus: BlogStatus) => {
@@ -146,7 +146,7 @@ export default function AdminDashboardPage() {
               }}>Publish</button>
             </div>
           </div>
-          {error && <p className="text-red-400">{error}</p>}
+          {error && <p className="text-red-600">{error}</p>}
           <div className="grid lg:grid-cols-2 gap-6">
             <label className="text-sm text-ink-200">Title<input className={inputClass} name="title" defaultValue={editing.title} required onChange={(e) => { if (!editing.slug) setEditing({ ...editing, slug: slugify(e.target.value) }); }} /></label>
             <label className="text-sm text-ink-200">URL slug<input className={inputClass} name="slug" defaultValue={editing.slug} required /></label>
@@ -184,8 +184,8 @@ export default function AdminDashboardPage() {
           <button onClick={() => setActiveSection('schedule')} className={`glass rounded-xl p-4 flex items-center gap-3 hover:border-gold-400 ${activeSection === 'schedule' ? 'border-gold-400' : ''}`}><span className="text-sm">Schedule</span></button>
           <button onClick={() => setActiveSection('services')} className={`glass rounded-xl p-4 flex items-center gap-3 hover:border-gold-400 ${activeSection === 'services' ? 'border-gold-400' : ''}`}><span className="text-sm">Services & Pricing</span></button>
         </nav>
-        {message && <p className="mb-4 text-green-400">{message}</p>}
-        {error && <p className="mb-4 text-red-400">{error}</p>}
+        {message && <p className="mb-4 text-green-700">{message}</p>}
+        {error && <p className="mb-4 text-red-600">{error}</p>}
         {activeSection === 'bookings' ? <BookingManager /> : activeSection === 'schedule' ? <ScheduleManager /> : activeSection === 'services' ? <ServicesManager /> : <section className="glass rounded-2xl p-5 sm:p-8">
             <div className="flex flex-wrap gap-3 mb-6"><input className={`${inputClass} max-w-sm`} placeholder="Search posts..." value={search} onChange={(e) => setSearch(e.target.value)} /><select className={`${inputClass} max-w-xs`} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}><option value="all">All statuses</option><option value="draft">Drafts</option><option value="published">Published</option><option value="unpublished">Unpublished</option></select></div>
             <div className="space-y-3">{visiblePosts.map((post) => <div key={post.id} className="flex flex-wrap items-center justify-between gap-4 border-b border-ink-50/10 py-4"><div><h2 className="font-display text-xl">{post.title}</h2><p className="text-ink-400 text-sm">{post.category} · {post.status}</p></div><div className="flex gap-2"><button title="Edit post" className="btn-outline px-3 py-2" onClick={() => setEditing(post)}><Edit3 className="w-4 h-4" /></button>{post.status === 'published' ? <button title="Unpublish post" className="btn-outline px-3 py-2" onClick={() => void changeStatus(post, 'unpublished')}><EyeOff className="w-4 h-4" /></button> : <button title="Publish post" className="btn-outline px-3 py-2" onClick={() => void changeStatus(post, 'published')}><Eye className="w-4 h-4" /></button>}<button title="Delete post" className="btn-outline px-3 py-2 hover:border-red-500 hover:text-red-500" onClick={() => void remove(post.id)}><Trash2 className="w-4 h-4" /></button></div></div>)}{visiblePosts.length === 0 && <p className="text-ink-300 py-8 text-center">No posts found.</p>}</div>

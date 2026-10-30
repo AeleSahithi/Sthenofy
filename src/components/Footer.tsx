@@ -2,6 +2,7 @@
 import { Instagram, Linkedin, Youtube, MapPin, Phone, Mail } from 'lucide-react';
 import sthenofyLogo from '@/assets/sthenofy-logo-text-black.png';
 import type { PageId } from './Navbar';
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, SUPPORT_EMAIL, linkProps } from '@/lib/site';
 
 interface FooterProps {
   onNavigate: (page: PageId) => void;
@@ -13,7 +14,7 @@ export default function Footer({ onNavigate }: FooterProps) {
       {/* Background glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-gold-400/5 blur-[100px] pointer-events-none" />
 
-      <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-12 sm:py-16">
+      <div className="relative max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 pt-12 pb-24 sm:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
 
           {/* Brand */}
@@ -81,12 +82,12 @@ export default function Footer({ onNavigate }: FooterProps) {
                 { id: 'contact' as PageId, label: 'Contact' },
               ].map((link) => (
                 <li key={link.id}>
-                  <button
-                    onClick={() => onNavigate(link.id)}
+                  <a
+                    {...linkProps(link.id, onNavigate)}
                     className="text-ink-300 text-sm hover:text-gold-400 transition-colors duration-300"
                   >
                     {link.label}
-                  </button>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -103,7 +104,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
                 <span>
                   H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage,
-                  Bengaluru, 560076.1
+                  Bengaluru, 560076
                 </span>
               </li>
 
@@ -117,16 +118,16 @@ export default function Footer({ onNavigate }: FooterProps) {
 
               <li className="flex items-center gap-3 text-ink-300 text-sm">
                 <Phone className="w-4 h-4 text-gold-400 shrink-0" />
-                <span>+91 90356 54943</span>
+                <a href={CONTACT_PHONE_TEL} className="hover:text-gold-400 transition-colors">{CONTACT_PHONE_DISPLAY}</a>
               </li>
 
               <li className="flex items-center gap-3 text-ink-300 text-sm">
                 <Mail className="w-4 h-4 text-gold-400 shrink-0" />
                 <a
-                  href="mailto:support@sthenofy.com"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="hover:text-gold-400 transition-colors"
                 >
-                  support@sthenofy.com
+                  {SUPPORT_EMAIL}
                 </a>
               </li>
             </ul>
@@ -157,26 +158,17 @@ export default function Footer({ onNavigate }: FooterProps) {
           </p>
 
           <div className="flex flex-wrap justify-center gap-6 text-ink-400 text-xs">
-            <button
-              onClick={() => onNavigate('privacy')}
-              className="hover:text-gold-400 transition-colors"
-            >
+            <a {...linkProps('privacy', onNavigate)} className="hover:text-gold-400 transition-colors">
               Privacy Policy
-            </button>
+            </a>
 
-            <button
-              onClick={() => onNavigate('terms')}
-              className="hover:text-gold-400 transition-colors"
-            >
+            <a {...linkProps('terms', onNavigate)} className="hover:text-gold-400 transition-colors">
               Terms of Service
-            </button>
+            </a>
 
-            <button
-              onClick={() => onNavigate('refund')}
-              className="hover:text-gold-400 transition-colors"
-            >
+            <a {...linkProps('refund', onNavigate)} className="hover:text-gold-400 transition-colors">
               Refund Policy
-            </button>
+            </a>
           </div>
         </div>
       </div>

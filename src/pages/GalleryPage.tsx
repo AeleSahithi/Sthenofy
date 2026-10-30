@@ -9,9 +9,9 @@ const galleryAssets = import.meta.glob('@/assets/Gallery/*.{png,jpg,jpeg,webp}',
 
 const galleryImages = Object.entries(galleryAssets)
   .sort(([first], [second]) => first.localeCompare(second))
-  .map(([path, url]) => ({
+  .map(([, url], index) => ({
     url,
-    alt: `STHENOFY gallery image ${path.split(/[\\/]/).pop()?.split('.')[0] || ''}`,
+    alt: `Training at STHENOFY — photo ${index + 1}`,
   }));
 
 export default function GalleryPage() {
@@ -59,9 +59,9 @@ export default function GalleryPage() {
                 <ZoomIn className="w-4 h-4" />
                 <span>About STHENOFY</span>
               </div>
-              <h2 className="font-display text-white text-3xl sm:text-4xl md:text-6xl tracking-tight mb-6">
+              <h1 className="font-display text-white text-3xl sm:text-4xl md:text-6xl tracking-tight mb-6">
                 WHERE HEALTH BECOMES <span className="text-gold-400">A LIFESTYLE</span>
-              </h2>
+              </h1>
               <p className="text-white text-base sm:text-lg leading-relaxed mb-5">
                 Welcome to STHENOFY, where strength meets science and fitness becomes a lifestyle. Based in Hyderabad and Bangalore, we combine personalized training, evidence-based practices, and ongoing coaching to help you work towards your health and fitness goals.
               </p>
@@ -151,6 +151,8 @@ export default function GalleryPage() {
                 <img
                   src={img.url}
                   alt={img.alt}
+                  loading="lazy"
+                  decoding="async"
                   className="block w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/40 transition-all duration-300 flex items-center justify-center">

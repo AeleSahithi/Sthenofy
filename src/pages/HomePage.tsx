@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Dumbbell, Heart, Flame, Users, Apple, Award, ArrowRight, Zap, Target, TrendingUp, Instagram,
 } from 'lucide-react';
-import ctaBackground from '@/assets/Gallery/vlcsnap-2025-07-20-12h21m46s983.png';
+import ctaBackground from '@/assets/Gallery/vlcsnap-2025-07-20-12h21m46s983.webp';
 import type { PageId } from '@/components/Navbar';
 import HeroVideo from '@/components/HeroVideo';
 
@@ -227,7 +227,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             ].map((program, i) => (
               <button key={i} className="card-hover group relative overflow-hidden rounded-2xl cursor-pointer text-left" onClick={() => onNavigate('services')}>
                 <div className="aspect-[3/4] relative">
-                  <img src={program.img} alt={program.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={program.img} alt={program.title} loading="lazy" decoding="async" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
                   <div className="absolute top-4 left-4">
                     <span className="glass-gold rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gold-400">{program.tag}</span>
@@ -323,7 +323,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
       {/* CTA */}
       <section className="py-16 sm:py-24 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0">
-          <img src={ctaBackground} alt="" className="w-full h-full object-cover grayscale opacity-45" />
+          <img src={ctaBackground} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover grayscale opacity-45" />
           <div className="absolute inset-0 bg-black/75" />
         </div>
         <div className="relative max-w-4xl mx-auto px-5 sm:px-6 text-center">

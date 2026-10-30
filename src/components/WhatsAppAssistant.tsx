@@ -1,7 +1,8 @@
 import { X } from 'lucide-react';
 import { useState } from 'react';
+import { whatsappLink } from '@/lib/site';
 
-const whatsappUrl = 'https://wa.me/919346122966?text=Hi%20Sthenofy%2C%20I%20would%20like%20to%20know%20more%20about%20your%20fitness%20programs.';
+const whatsappUrl = whatsappLink('Hi Sthenofy, I would like to know more about your fitness programs.');
 
 function WhatsAppIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (

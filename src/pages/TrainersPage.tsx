@@ -1,8 +1,8 @@
 import { Award } from 'lucide-react';
 
-import bharathImg from '@/assets/Trainers/Bharath Namadari.jpg';
-import vamshiImg from '@/assets/Trainers/Vamshi Krishna Nandimalla.jpg';
-import akshataImg from '@/assets/Trainers/Akshata Chavan.jpeg';
+import bharathImg from '@/assets/Trainers/Bharath Namadari.webp';
+import vamshiImg from '@/assets/Trainers/Vamshi Krishna Nandimalla.webp';
+import akshataImg from '@/assets/Trainers/Akshata Chavan.webp';
 
 const trainers = [
   {

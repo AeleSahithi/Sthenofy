@@ -40,39 +40,35 @@ After running the appointment migration:
 
 Prices are read from Supabase and are not hardcoded in the frontend. Appointment times are stored as UTC instants and displayed in `Asia/Kolkata`.
 
-### PayU payment setup
-
-The PayU adapter is in `supabase/functions/payu-payment/index.ts`. Deploy it as a Supabase Edge Function:
-
-```powershell
-supabase functions deploy payu-payment
-```
-
-Configure these Edge Function secrets. Never put them in Vite variables or GitHub Pages variables:
-
-```text
-PAYU_MERCHANT_KEY=your-payU-key
-PAYU_MERCHANT_SALT=your-payU-salt
-PAYU_ENVIRONMENT=test
-PUBLIC_SITE_ORIGIN=https://your-domain.example
-PUBLIC_SITE_PATH=/Sthenofy/
-```
-
-Use `production` only after PayU has approved the merchant account. The function creates the PayU hosted-checkout hash server-side, receives PayU's success/failure callback, verifies the response hash, and only then changes a booking from `hold/pending` to `confirmed/paid`. The browser redirect is never treated as proof of payment.
-
 Run the payment-fields migration after the original appointment migration:
 
 ```text
 supabase/migrations/20261014000000_add_payu_payment_fields.sql
 ```
 
-In the PayU dashboard, configure the success and failure callback URL to:
+Then run the admin-slots and payment-link migration:
 
 ```text
-https://YOUR_PROJECT_REF.supabase.co/functions/v1/payu-payment
+supabase/migrations/20261030000000_admin_slots_and_hourly_blocks.sql
 ```
 
-Run PayU test payments first. Configure the correct PayU test/production merchant endpoints according to the PayU account product enabled for Sthenofy.
+Then `supabase/migrations/20261031000000_restrict_internal_functions.sql`, which stops anonymous visitors calling internal helper functions.
+
+The admin-slots migration adds `blocked` bookings (time the admin is unavailable), admin-created bookings, PayU payment-link bookings, a `bookings.amount` price snapshot that the database fills from `service_types`, and one-hour appointment blocks. Blocked time and confirmed/held bookings all show as **Booked** on the public calendar, and the database prevents any overlap between them.
+
+### PayU payment (payment link)
+
+Customers pay through the static PayU payment link `https://u.payu.in/8rW2Lhb18XZD` (set in `PAYU_PAYMENT_LINK` in `src/lib/appointments.ts`). No merchant key or salt is used by the website.
+
+1. The customer picks a service (price from Supabase), a slot, and fills in their details.
+2. **Reserve Slot** calls `create_booking`, which holds the slot for 60 minutes and saves the service price from the database in `bookings.amount`.
+3. **Pay Now** opens the PayU link in a new tab. Clicking it never changes payment status.
+4. After paying, the customer can submit their PayU transaction ID. This only records the reference and keeps the slot held for 24 hours; it does not mark anything paid.
+5. The admin checks the payment in the PayU dashboard (amount, email, phone, transaction ID) and clicks **Confirm payment** in Admin → Bookings. Only then is the booking `confirmed / paid`.
+
+Limitation: a static payment link cannot receive the booking ID or the amount from the website, and PayU does not tell the website which booking a link payment belongs to. If the link has a fixed amount, every customer pays that amount whatever the service price is; if it lets the customer enter an amount, the customer could enter the wrong amount. That is why the admin compares the PayU payment with `bookings.amount` before confirming.
+
+The older merchant-key checkout (`supabase/functions/payu-payment`) is no longer called by the website. Its secrets stay only in Supabase Edge Function secrets. It can be removed with `supabase functions delete payu-payment` once you no longer need it.
 
 ## 3. Create the first admin
 
