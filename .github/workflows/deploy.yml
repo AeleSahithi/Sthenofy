@@ -63,7 +63,9 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           sudo apt-get install -y -qq lftp > /dev/null
-          host="${FTP_SERVER#ftp://}"; host="${host%/}"
+          # srv1833.hstgr.io is the hosting server shown by hPanel's File Manager; its certificate
+          # (*.hstgr.io) matches that name, so TLS is fully verified. The FTP IP alone does not match.
+          host="srv1833.hstgr.io"
           lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "$host" -e "
             set ftp:ssl-force yes; set net:max-retries 2; set net:timeout 20;
             echo '== login folder:'; pwd;
