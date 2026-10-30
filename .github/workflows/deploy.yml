@@ -51,8 +51,16 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
 
+      # GitHub Pages has no SPA rewrites. Give each public route its own index.html so
+      # direct links return HTTP 200 (indexable); 404.html still covers blog posts,
+      # /admin, and unknown URLs (which render the in-app 404 page).
       - name: Support direct app routes
-        run: cp dist/index.html dist/404.html
+        run: |
+          cp dist/index.html dist/404.html
+          for route in services trainers about blog contact privacy terms refund; do
+            mkdir -p "dist/$route"
+            cp dist/index.html "dist/$route/index.html"
+          done
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

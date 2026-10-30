@@ -29,7 +29,7 @@ export default function BlogPage() {
   }, []);
 
   const openPost = (slug: string) => { window.history.pushState({}, '', postPath(slug)); setSelectedSlug(slug); window.scrollTo(0, 0); };
-  const closePost = () => { window.history.pushState({}, '', `${import.meta.env.BASE_URL}blog`); setSelectedSlug(null); };
+  const closePost = () => { window.history.pushState({}, '', `${import.meta.env.BASE_URL}blog/`); setSelectedSlug(null); };
   const selectedPost = posts.find((post) => post.slug === selectedSlug);
   const categories = useMemo(() => ['All', ...Array.from(new Set(posts.map((post) => post.category)))], [posts]);
   const filteredPosts = activeCategory === 'All' ? posts : posts.filter((post) => post.category === activeCategory);

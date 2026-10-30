@@ -60,7 +60,9 @@ const routes: Record<PageId, { path: string; title: string; description: string 
 const aliases: Record<string, PageId> = { gallery: 'gallery', 'privacy-policy': 'privacy', 'refund-policy': 'refund' };
 
 export function pathFor(page: PageId): string {
-  return `${base}${routes[page].path}`;
+  const path = routes[page].path;
+  // Trailing slash matches the per-route folders GitHub Pages serves (avoids a redirect).
+  return path ? `${base}${path}/` : base;
 }
 
 /** Real links (crawlable, open in new tab) that navigate in-app on a normal click. */
@@ -91,7 +93,7 @@ function setMeta(selector: string, attribute: string, value: string) {
 /** Per-route title, description, canonical URL, and Open Graph tags. */
 export function applyPageMeta(page: PageId) {
   const route = routes[page];
-  const url = page === 'not-found' ? SITE_URL : `${SITE_URL}${route.path}`;
+  const url = page === 'not-found' || !route.path ? SITE_URL : `${SITE_URL}${route.path}/`;
   document.title = route.title;
   setMeta('meta[name="description"]', 'content', route.description);
   setMeta('link[rel="canonical"]', 'href', url);
