@@ -81,7 +81,22 @@ insert into public.admin_users (user_id)
 values ('AUTH_USER_UUID');
 ```
 
-The user can then sign in at `/admin`. To add another administrator, create another Auth user and insert their UUID into `admin_users`.
+The user can then sign in at `/admin`.
+
+### Inviting another administrator
+
+1. Supabase → **Authentication → URL Configuration**: Site URL `https://sthenofy.com/admin`, and `https://sthenofy.com/admin` in Redirect URLs (one-time setup; invite and reset links land there).
+2. **Authentication → Users → Add user → Send invitation** with their email. Supabase emails them a link.
+3. Authorise them in **SQL Editor** (they can do step 4 before or after this):
+
+   ```sql
+   insert into public.admin_users (user_id)
+   select id from auth.users where email = 'their.email@example.com';
+   ```
+
+4. They open the email link, choose a password on the **Set your password** screen, and land in the dashboard. Afterwards they sign in at `https://sthenofy.com/admin`.
+
+To remove access: `delete from public.admin_users where user_id = (select id from auth.users where email = 'their.email@example.com');` (or delete the user under Authentication → Users).
 
 ## 4. Run locally
 

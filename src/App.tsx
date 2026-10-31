@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import Navbar, { type PageId } from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import HomePage from '@/pages/HomePage';
@@ -8,19 +8,24 @@ import ContactPage from '@/pages/ContactPage';
 import ServicesPage from '@/pages/ServicesPage';
 import LegalPage from '@/pages/LegalPage';
 import NotFoundPage from '@/pages/NotFoundPage';
-import { supabase } from '@/lib/supabase';
+import { openedFromPasswordEmail, supabase } from '@/lib/supabase';
 import { applyPageMeta, pageFromPath, pathFor } from '@/lib/site';
 import WhatsAppAssistant from '@/components/WhatsAppAssistant';
 
 // Loaded on demand: they pull in the rich-text editor, which most visitors never need.
 const BlogPage = lazy(() => import('@/pages/BlogPage'));
 const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage'));
+const AdminSetPasswordPage = lazy(() => import('@/pages/AdminLoginPage').then((module) => ({ default: module.AdminSetPasswordPage })));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
 
 const pageFallback = <div className="min-h-screen pt-20 flex items-center justify-center text-ink-300">Loading...</div>;
 
 function AdminRoute() {
-  const [state, setState] = useState<'loading' | 'login' | 'dashboard' | 'denied'>('loading');
+  const [state, setState] = useState<'loading' | 'login' | 'set-password' | 'dashboard' | 'denied'>('loading');
+  const [email, setEmail] = useState('');
+  // Invite and password-reset links sign the person in; they must choose a password before continuing.
+  const needsPassword = useRef(openedFromPasswordEmail);
+  const recheck = useRef<() => Promise<void>>(async () => undefined);
 
   useEffect(() => {
     document.title = 'Admin — STHENOFY';
@@ -34,6 +39,11 @@ function AdminRoute() {
         if (mounted) setState('login');
         return;
       }
+      if (mounted) setEmail(data.session.user.email ?? '');
+      if (needsPassword.current) {
+        if (mounted) setState('set-password');
+        return;
+      }
       const { data: admin, error } = await client
         .from('admin_users')
         .select('user_id')
@@ -41,14 +51,24 @@ function AdminRoute() {
         .maybeSingle();
       if (mounted) setState(admin && !error ? 'dashboard' : 'denied');
     };
+    recheck.current = checkAccess;
     void checkAccess();
-    const { data: listener } = client.auth.onAuthStateChange(() => { void checkAccess(); });
+    const { data: listener } = client.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') needsPassword.current = true;
+      void checkAccess();
+    });
     return () => { mounted = false; listener.subscription.unsubscribe(); };
   }, []);
 
+  const signOut = async () => {
+    await supabase?.auth.signOut();
+    setState('login');
+  };
+
   if (state === 'loading') return <main className="min-h-screen bg-ink-950 flex items-center justify-center text-ink-300">Checking access...</main>;
   if (state === 'login') return <Suspense fallback={pageFallback}><AdminLoginPage /></Suspense>;
-  if (state === 'denied') return <main className="min-h-screen bg-ink-950 flex items-center justify-center px-5 text-center"><div><h1 className="font-display text-4xl text-gold-400 mb-3">ACCESS UNAVAILABLE</h1><p className="text-ink-300">Configure Supabase and authorize this account as an administrator.</p></div></main>;
+  if (state === 'set-password') return <Suspense fallback={pageFallback}><AdminSetPasswordPage email={email} onDone={() => { needsPassword.current = false; void recheck.current(); }} /></Suspense>;
+  if (state === 'denied') return <main className="min-h-screen bg-ink-950 flex items-center justify-center px-5 text-center"><div><h1 className="font-display text-4xl text-gold-400 mb-3">ACCESS UNAVAILABLE</h1><p className="text-ink-300">{email ? <><b>{email}</b> is signed in but has not been given admin access yet. Ask the site owner to authorise this account.</> : 'Configure Supabase and authorise this account as an administrator.'}</p>{email && <button className="btn-outline mt-6" onClick={() => void signOut()}>Sign out</button>}</div></main>;
   return <Suspense fallback={pageFallback}><AdminDashboardPage /></Suspense>;
 }
 
