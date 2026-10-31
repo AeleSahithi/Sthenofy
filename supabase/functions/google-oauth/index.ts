@@ -67,7 +67,8 @@ Deno.serve(async (request) => {
     if (url.searchParams.get('error')) return backToAdmin('error', url.searchParams.get('error') || 'cancelled');
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state') || '';
-    if (!code || !(await verifyState(state))) return backToAdmin('error', 'The sign-in link expired. Please try again.');
+    const validState = await verifyState(state).catch(() => false); // malformed or forged state
+    if (!code || !validState) return backToAdmin('error', 'The sign-in link expired. Please try again.');
     try {
       const { refreshToken, email } = await exchangeCode(code);
       const { error } = await supabase.from('google_connection').upsert({
