@@ -138,6 +138,50 @@ In Supabase → **Authentication → URL Configuration**, set **Site URL** to `h
 
 Publishing a blog post or changing prices changes Supabase data and does not require a redeploy.
 
-## 6. Migrating legacy posts
+## 6. Booking emails, reminders, Google Calendar and Meet
+
+How it works: every booking change is queued in `booking_events` by a database trigger. The `booking-worker` Edge Function is called right away (pg_net) and every minute (pg_cron). It sends emails through Resend, creates/moves/deletes Google Calendar events with Meet links, sends reminders 24 hours and 1 hour before confirmed sessions, and every 10 minutes copies busy times from Google Calendar into `calendar_busy`, which hides those times from customers.
+
+| Event | Customer gets | Admin gets |
+|---|---|---|
+| Customer reserves a slot | "Slot reserved" with PayU link | "New reservation" |
+| Customer submits PayU reference | — | "Payment to verify" |
+| Admin confirms payment / books for a customer | "Confirmed" + Meet link + calendar file, and a Google Calendar invite | Event in Google Calendar |
+| Admin reschedules | "Rescheduled" + updated invite | Event moved |
+| Admin cancels | "Cancelled" | Event removed |
+| 24 h and 1 h before | Reminder with Meet link | — |
+
+Setup order:
+
+1. **Deploy the functions** (from the repository root):
+
+   ```powershell
+   supabase functions deploy booking-worker --no-verify-jwt
+   supabase functions deploy google-oauth --no-verify-jwt
+   ```
+
+   Both check authorisation themselves (a database-generated secret, and the admin's session), which is why JWT verification is off.
+
+2. **Email (Resend):** create an account at resend.com, add the domain `sthenofy.com`, and add the DNS records Resend shows in Hostinger → DNS / Nameservers. Resend uses the `send` subdomain and a `resend._domainkey` record, so the Google Workspace MX and SPF records on the main domain are untouched. Create an API key.
+3. **Google Calendar:** signed in to Google Cloud Console with the Workspace account whose calendar should receive bookings:
+   1. Create a project, then enable **Google Calendar API**.
+   2. Google Auth Platform → **Audience: Internal** (no Google review needed), app name "Sthenofy Bookings".
+   3. **Clients → Create client → Web application**, Authorised redirect URI: `https://fmexlqqgdrdkboefeguk.supabase.co/functions/v1/google-oauth`. Copy the Client ID and Client secret.
+4. **Supabase → Edge Functions → Secrets** (never commit these):
+
+   ```text
+   RESEND_API_KEY        from Resend
+   EMAIL_FROM            STHENOFY <bookings@sthenofy.com>
+   ADMIN_EMAIL           support@sthenofy.com
+   GOOGLE_CLIENT_ID      from Google Cloud
+   GOOGLE_CLIENT_SECRET  from Google Cloud
+   ```
+
+5. **Run the migration** in SQL Editor: `supabase/migrations/20261101000000_booking_notifications_and_google_calendar.sql`. It enables `pg_net` and `pg_cron` and schedules the worker. Bookings made before `RESEND_API_KEY` is set stay queued and are sent once it is.
+6. **Connect the calendar:** Admin → Bookings → **Connect Google Calendar**, and sign in with the Workspace account from step 3.
+
+Troubleshooting: Supabase → Edge Functions → `booking-worker` → Logs; failed events keep their error in `booking_events.last_error` (retried up to 5 times); Google problems are shown in the admin Bookings panel.
+
+## 7. Migrating legacy posts
 
 The original sample posts remain in `src/data/legacyBlogPosts.ts`. Create equivalent rows through the admin dashboard or import them with a trusted one-time script using a server-side service-role key. Never put that service-role key in the frontend or repository.

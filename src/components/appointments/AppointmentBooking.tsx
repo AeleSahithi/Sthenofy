@@ -204,7 +204,7 @@ export default function AppointmentBooking() {
                 <label className="block text-sm text-ink-200">PayU transaction ID (after paying)<input className={`${inputClass} mt-2`} name="reference" maxLength={100} autoComplete="off" required /></label>
                 <button className="btn-outline w-full" disabled={submitting}>{submitting ? 'Sending...' : 'I have paid — submit reference'}</button>
               </form>}
-            <p className="text-xs text-ink-400">Your appointment is confirmed only after we verify the payment. Unpaid reservations are released automatically.</p>
+            <p className="text-xs text-ink-400">Your appointment is confirmed only after we verify the payment; we'll then email your confirmation and meeting link. Unpaid reservations are released automatically.</p>
             <button type="button" className="text-sm text-ink-300 hover:text-gold-400" onClick={startOver}>← Book another slot</button>
             {error && <p className="text-red-600 text-sm">{error}</p>}
           </div>

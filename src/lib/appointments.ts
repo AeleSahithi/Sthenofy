@@ -57,6 +57,10 @@ export interface Booking {
   amount: number | null;
   currency: string | null;
   hold_expires_at: string | null;
+  confirmed_at?: string | null;
+  /** Google Calendar event and Meet link, set when Google Calendar is connected. */
+  google_event_id?: string | null;
+  meet_link?: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -357,4 +361,39 @@ export async function saveServiceType(values: Partial<ServiceType>, id?: string)
 
 export function getLocalAppointmentDate(date: Date): string {
   return localDateFromDate(date);
+}
+
+// --- Google Calendar (admin) ---
+
+export interface GoogleConnectionStatus {
+  email: string;
+  connected_at: string;
+  last_busy_sync_at: string | null;
+  last_error: string | null;
+}
+
+/** Admin: the connected Google account, or null when not connected. */
+export async function fetchGoogleStatus(): Promise<GoogleConnectionStatus | null> {
+  const { data, error } = await requireSupabase().rpc('get_google_connection_status');
+  if (error) throw error;
+  return ((data ?? []) as GoogleConnectionStatus[])[0] ?? null;
+}
+
+/** Admin: busy times copied from Google Calendar (they block customer slots). */
+export async function fetchCalendarBusy(): Promise<BookedInterval[]> {
+  const { data, error } = await requireSupabase().from('calendar_busy').select('starts_at, ends_at').order('starts_at');
+  if (error) throw error;
+  return (data ?? []) as BookedInterval[];
+}
+
+/** Admin: sends the browser to Google's consent screen; Google returns to /admin?google=connected. */
+export async function connectGoogleCalendar(): Promise<void> {
+  const { data, error } = await requireSupabase().functions.invoke<{ url?: string; error?: string }>('google-oauth', { method: 'POST' });
+  if (error || !data?.url) throw new Error(data?.error || 'Google Calendar connection is not set up yet (see SETUP.md).');
+  window.location.assign(data.url);
+}
+
+export async function disconnectGoogleCalendar(): Promise<void> {
+  const { error } = await requireSupabase().rpc('disconnect_google_calendar');
+  if (error) throw error;
 }

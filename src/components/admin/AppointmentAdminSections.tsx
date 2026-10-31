@@ -8,7 +8,11 @@ import {
   fetchActiveServices,
   fetchAdminBookings,
   fetchAllServices,
+  fetchCalendarBusy,
+  fetchGoogleStatus,
   fetchScheduleData,
+  connectGoogleCalendar,
+  disconnectGoogleCalendar,
   formatMoney,
   getDaySlots,
   getLocalAppointmentDate,
@@ -20,6 +24,8 @@ import {
   saveServiceType,
   updateWorkingHours,
   type AdminBooking,
+  type BookedInterval,
+  type GoogleConnectionStatus,
   type ScheduleException,
   type ServiceType,
   type WorkingHours,
@@ -61,6 +67,51 @@ function describeBooking(booking: AdminBooking) {
 
 type Draft = { kind: 'blocked' | 'booking'; startsAt: string };
 
+/** Connect/disconnect Google Calendar (events + Meet links for confirmed bookings, busy times block slots). */
+function GoogleCalendarPanel({ onChange }: { onChange: () => void }) {
+  const [status, setStatus] = useState<GoogleConnectionStatus | null>(null);
+  const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const result = params.get('google');
+    if (!result) return '';
+    window.history.replaceState({}, '', window.location.pathname);
+    return result === 'connected' ? 'Google Calendar connected.' : `Google Calendar was not connected: ${params.get('reason') || 'cancelled'}`;
+  });
+
+  const load = useCallback(async () => {
+    try { setStatus(await fetchGoogleStatus()); setState('ready'); } catch { setState('unavailable'); }
+  }, []);
+  useEffect(() => { void load(); }, [load]);
+
+  const connect = async () => {
+    setBusy(true);
+    setNotice('');
+    try { await connectGoogleCalendar(); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to start Google sign-in.'); setBusy(false); }
+  };
+  const disconnect = async () => {
+    if (!window.confirm('Disconnect Google Calendar? New bookings will no longer get calendar events or Meet links, and Google busy times stop blocking slots.')) return;
+    setBusy(true);
+    try { await disconnectGoogleCalendar(); await load(); onChange(); setNotice('Google Calendar disconnected.'); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to disconnect.'); } finally { setBusy(false); }
+  };
+
+  if (state === 'unavailable') return null; // Notifications migration not applied yet.
+  return <div className="rounded-xl border border-ink-50/10 p-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="text-sm">
+      <p className="font-semibold">Google Calendar &amp; Meet</p>
+      {state === 'loading' ? <p className="text-ink-400">Checking...</p> : status
+        ? <p className="text-ink-300">Connected as <b>{status.email}</b>{status.last_busy_sync_at ? ` · busy times synced ${istTime(status.last_busy_sync_at)}` : ' · first sync within 10 minutes'}</p>
+        : <p className="text-ink-300">Not connected. Confirmed bookings won't get calendar events or Meet links.</p>}
+      {status?.last_error && <p className="text-red-600 text-xs mt-1">Last problem: {status.last_error}</p>}
+      {notice && <p className={`text-xs mt-1 ${notice.includes('not') || notice.includes('Unable') ? 'text-red-600' : 'text-green-700'}`}>{notice}</p>}
+    </div>
+    {status
+      ? <button className="btn-outline px-3 py-1.5 text-xs" disabled={busy} onClick={() => void disconnect()}>Disconnect</button>
+      : <button className="btn-gold px-3 py-1.5 text-xs" disabled={busy || state === 'loading'} onClick={() => void connect()}>{busy ? 'Opening Google...' : 'Connect Google Calendar'}</button>}
+  </div>;
+}
+
 export function BookingManager() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [services, setServices] = useState<ServiceType[]>([]);
@@ -74,7 +125,13 @@ export function BookingManager() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const loadBookings = useCallback(async () => { setBookings(await fetchAdminBookings()); }, []);
+  const [googleBusy, setGoogleBusy] = useState<BookedInterval[]>([]);
+
+  const loadBookings = useCallback(async () => {
+    setBookings(await fetchAdminBookings());
+    // Busy times only exist once Google Calendar is connected; ignore if the feature isn't set up.
+    setGoogleBusy(await fetchCalendarBusy().catch(() => []));
+  }, []);
   const fail = (fallback: string) => (e: unknown) => setError(e instanceof Error ? e.message : fallback);
 
   useEffect(() => {
@@ -180,13 +237,14 @@ export function BookingManager() {
   const entryRow = (booking: AdminBooking, time: string) => {
     const info = describeBooking(booking);
     return <div key={`${booking.id}-${time}`} className={`rounded-xl border p-3 flex flex-wrap items-center justify-between gap-3 ${info.tone}`}>
-      <div><p className="text-sm font-semibold">{time} · {info.label}</p><p className="text-xs opacity-80">{info.detail}{booking.customer_email ? ` · ${booking.customer_email}` : ''}{booking.customer_phone ? ` · ${booking.customer_phone}` : ''}</p>{booking.payment_reference && <p className="text-xs opacity-80 mt-1">Payment ref: {booking.payment_reference}</p>}{booking.notes &&<p className="text-xs opacity-70 mt-1">Note: {booking.notes}</p>}</div>
+      <div><p className="text-sm font-semibold">{time} · {info.label}</p><p className="text-xs opacity-80">{info.detail}{booking.customer_email ? ` · ${booking.customer_email}` : ''}{booking.customer_phone ? ` · ${booking.customer_phone}` : ''}</p>{booking.payment_reference && <p className="text-xs opacity-80 mt-1">Payment ref: {booking.payment_reference}</p>}{booking.meet_link && <p className="text-xs mt-1"><a href={booking.meet_link} target="_blank" rel="noopener noreferrer" className="underline">Google Meet link</a></p>}{booking.notes &&<p className="text-xs opacity-70 mt-1">Note: {booking.notes}</p>}</div>
       {entryActions(booking)}
     </div>;
   };
 
   return <section className="glass rounded-2xl p-5 sm:p-8 space-y-8">
     <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-display text-3xl">BOOKINGS CALENDAR</h2><button className="btn-outline px-3 py-2 text-sm" onClick={() => void loadBookings().then(() => setMessage('Refreshed.')).catch(fail('Unable to load bookings.'))}>Refresh</button></div>
+    <GoogleCalendarPanel onChange={() => void loadBookings()} />
     {message && <p className="text-green-700">{message}</p>}
     {error && <p className="text-red-600">{error}</p>}
     <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-8">
@@ -216,6 +274,9 @@ export function BookingManager() {
             const occupant = dayEntries.find((booking) => overlapsInterval(slot, booking));
             const time = `${slot.localStart} – ${slot.localEnd}`;
             if (occupant) return entryRow(occupant, time);
+            if (googleBusy.some((busy) => overlapsInterval(slot, busy))) return <div key={slot.startsAt} className="rounded-xl border border-ink-50/10 bg-ink-50/5 p-3">
+              <p className="text-sm text-ink-300">{time} · <span className="font-semibold">Busy in Google Calendar</span> <span className="text-ink-400">(hidden from customers)</span></p>
+            </div>;
             return <div key={slot.startsAt} className="rounded-xl border border-ink-50/10 p-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm text-ink-200">{time} · <span className="text-ink-400">Free</span></p>
               <div className="flex gap-2"><button className="btn-outline px-3 py-1.5 text-xs" onClick={() => setDraft({ kind: 'blocked', startsAt: slot.startsAt })}>Block</button><button className="btn-gold px-3 py-1.5 text-xs" onClick={() => setDraft({ kind: 'booking', startsAt: slot.startsAt })}>Book for customer</button></div>
