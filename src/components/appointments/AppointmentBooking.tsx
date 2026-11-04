@@ -9,7 +9,9 @@ import {
   getDaySlots,
   getLocalAppointmentDate,
   overlapsInterval,
+  PAYMENT_HOLD_MINUTES,
   PAYU_PAYMENT_LINK,
+  releaseBookingHold,
   submitPaymentReference,
   type AvailabilitySlot,
   type BookedInterval,
@@ -61,7 +63,8 @@ export default function AppointmentBooking() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [reservation, setReservation] = useState<Reservation | null>(null);
-  const [referenceSent, setReferenceSent] = useState(false);
+  const [referenceResult, setReferenceResult] = useState<'held' | 'slot_taken' | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   const service = services.find((item) => item.id === serviceId);
   const days = useMemo(() => monthDays(month), [month]);
@@ -99,6 +102,14 @@ export default function AppointmentBooking() {
     return () => window.clearInterval(refresh);
   }, [refreshBooked]);
 
+  // Ticks the "time left to pay" countdown while an unpaid hold is open.
+  const counting = !!reservation && !referenceResult;
+  useEffect(() => {
+    if (!counting) return;
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [counting]);
+
   useEffect(() => {
     if (selectedSlot && isBooked(selectedSlot)) {
       setSelectedSlot(null);
@@ -127,7 +138,8 @@ export default function AppointmentBooking() {
         startsAt: selectedSlot.startsAt,
       });
       setReservation({ booking, slot: selectedSlot, serviceName: service.name });
-      setReferenceSent(false);
+      setReferenceResult(null);
+      setNow(Date.now());
       await refreshBooked().catch(() => undefined);
     } catch (reason) {
       await refreshBooked().catch(() => undefined);
@@ -144,8 +156,7 @@ export default function AppointmentBooking() {
     setError('');
     try {
       const reference = String(new FormData(event.currentTarget).get('reference') || '');
-      await submitPaymentReference(reservation.booking.id, reservation.booking.customer_email, reference);
-      setReferenceSent(true);
+      setReferenceResult(await submitPaymentReference(reservation.booking.id, reservation.booking.customer_email, reference));
     } catch (reason) {
       setError(friendlyError(reason, 'Unable to send the payment reference.'));
     } finally {
@@ -154,7 +165,15 @@ export default function AppointmentBooking() {
   };
 
   const startOver = () => {
+    // An unpaid hold is released straight away so the slot is free for everyone again.
+    if (reservation?.booking.customer_email && !referenceResult) {
+      void releaseBookingHold(reservation.booking.id, reservation.booking.customer_email)
+        .catch(() => undefined)
+        .then(() => refreshBooked())
+        .catch(() => undefined);
+    }
     setReservation(null);
+    setReferenceResult(null);
     setSelectedSlot(null);
     setError('');
   };
@@ -162,6 +181,9 @@ export default function AppointmentBooking() {
   const bookingAmount = reservation?.booking.amount != null
     ? formatMoney(Number(reservation.booking.amount), reservation.booking.currency || 'INR')
     : null;
+  const msLeft = reservation?.booking.hold_expires_at ? new Date(reservation.booking.hold_expires_at).getTime() - now : 0;
+  const holdExpired = !!reservation && msLeft <= 0;
+  const timeLeft = `${Math.floor(Math.max(msLeft, 0) / 60_000)}:${String(Math.floor((Math.max(msLeft, 0) % 60_000) / 1000)).padStart(2, '0')}`;
 
   return (
     <section id="appointment-booking" className="py-20 bg-ink-900 scroll-mt-20">
@@ -190,17 +212,20 @@ export default function AppointmentBooking() {
               <p><span className="text-ink-300">Time:</span> {getLocalAppointmentDate(new Date(reservation.slot.startsAt))}, {reservation.slot.localStart} – {reservation.slot.localEnd}</p>
               {bookingAmount && <p><span className="text-ink-300">Amount to pay:</span> <span className="font-semibold">{bookingAmount}</span></p>}
               <p><span className="text-ink-300">Booking reference:</span> {reservation.booking.id.slice(0, 8).toUpperCase()}</p>
-              {reservation.booking.hold_expires_at && <p><span className="text-ink-300">Slot held until:</span> {istTime(reservation.booking.hold_expires_at)}</p>}
+              {reservation.booking.hold_expires_at && !referenceResult && <p><span className="text-ink-300">Slot held until:</span> {istTime(reservation.booking.hold_expires_at)}</p>}
             </div>
+            {!referenceResult && (holdExpired
+              ? <p role="status" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">Your {PAYMENT_HOLD_MINUTES}-minute hold has ended and the slot may be booked by someone else. If you have already paid, submit your PayU transaction ID below and we will contact you.</p>
+              : <p role="timer" className="rounded-lg border border-ink-50/10 p-3 text-sm text-ink-200">Complete payment within <b className="font-display text-lg text-gold-500 tabular-nums">{timeLeft}</b> to keep this slot. Unpaid slots are released automatically.</p>)}
             <ol className="list-decimal pl-5 text-sm text-ink-300 space-y-1">
               <li>Click <b>Pay Now</b> and pay {bookingAmount ? <b>{bookingAmount}</b> : 'the session amount'} on PayU.</li>
               <li>Use the same email ({reservation.booking.customer_email}) and phone on PayU so we can match your payment.</li>
               <li>Come back here and enter your PayU transaction ID.</li>
             </ol>
             <a href={PAYU_PAYMENT_LINK} target="_blank" rel="noopener noreferrer" className="btn-gold w-full text-center">Pay Now</a>
-            {referenceSent
-              ? <p className="rounded-lg border border-green-400/30 bg-green-50 p-3 text-sm text-green-800">Thank you! We received your payment reference. Your appointment will be confirmed once we verify the payment with PayU.</p>
-              : <form onSubmit={(event) => void sendReference(event)} className="space-y-2 border-t border-ink-50/10 pt-4">
+            {referenceResult === 'held' && <p className="rounded-lg border border-green-400/30 bg-green-50 p-3 text-sm text-green-800">Thank you! We received your payment reference. Your appointment will be confirmed once we verify the payment with PayU.</p>}
+            {referenceResult === 'slot_taken' && <p className="rounded-lg border border-gold-400/40 bg-gold-50 p-3 text-sm text-ink-50">Thank you, we received your payment reference. Your hold ended before the payment was submitted and this time has since been booked, so we will contact you to choose another slot or refund your payment.</p>}
+            {!referenceResult && <form onSubmit={(event) => void sendReference(event)} className="space-y-2 border-t border-ink-50/10 pt-4">
                 <label className="block text-sm text-ink-200">PayU transaction ID (after paying)<input className={`${inputClass} mt-2`} name="reference" maxLength={100} autoComplete="off" required /></label>
                 <button className="btn-outline w-full" disabled={submitting}>{submitting ? 'Sending...' : 'I have paid — submit reference'}</button>
               </form>}

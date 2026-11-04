@@ -13,7 +13,7 @@ interface NavbarProps {
 const navItems: { id: PageId; label: string }[] = [
   { id: 'home', label: 'Home' },
   { id: 'services', label: 'Services' },
-  { id: 'trainers', label: 'Trainers' },
+  { id: 'trainers', label: 'Team' },
   { id: 'gallery', label: 'About Us' },
   { id: 'blog', label: 'Blog' },
   { id: 'contact', label: 'Contact' },
@@ -46,10 +46,11 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
 
   return (
     <>
-      <header
-        className="fixed top-0 left-0 right-0 z-[60] border-b border-black/10 bg-white shadow-sm"
-      >
-        <nav className="max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 flex items-center justify-between h-16 sm:h-20">
+      {/* Floating frosted-glass bar with a soft white-to-gold sheen and a gold hairline */}
+      <header className="fixed inset-x-0 top-0 z-[60] px-3 pt-3 sm:px-5 lg:px-6">
+        <div className="relative mx-auto max-w-7xl overflow-hidden rounded-2xl border border-white/70 bg-gradient-to-r from-white/[0.97] via-white/95 to-gold-100/95 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-xl backdrop-saturate-150">
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-8 bottom-0 h-px bg-gradient-to-r from-transparent via-gold-400 to-transparent" />
+        <nav className="flex items-center justify-between h-14 sm:h-16 px-4 sm:px-6">
           {/*  Logo */}
           <a
           {...linkProps('home', onNavigate, () => setMobileOpen(false))}
@@ -59,7 +60,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <img
            src={sthenofyLogo}
            alt="Sthenofy"
-           className="h-16 sm:h-16 w-36 sm:w-44 object-contain transition-transform duration-300 group-hover:scale-105"
+           className="h-12 sm:h-14 w-32 sm:w-40 object-contain transition-transform duration-300 group-hover:scale-105"
           />
        </a>
 
@@ -70,7 +71,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 <a
                   {...linkProps(item.id, onNavigate)}
                   aria-current={currentPage === item.id ? 'page' : undefined}
-                  className={`inline-block px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
+                  className={`inline-block px-3 xl:px-4 py-2 text-sm font-semibold uppercase tracking-wider transition-all duration-300 relative group ${
                     currentPage === item.id ? 'text-gold-500' : 'text-black hover:text-gold-500'
                   }`}
                 >
@@ -102,6 +103,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
             {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </nav>
+        </div>
       </header>
 
       {/* Mobile menu overlay */}
@@ -113,15 +115,9 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
         }`}
       >
         <div className="absolute inset-0 bg-black/20" onClick={() => setMobileOpen(false)} />
-        <nav className="relative flex flex-col items-center justify-center h-full gap-5 sm:gap-6 bg-white px-6 pb-20 text-black">
-          {/* Close button at top for easy reach */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center text-black hover:text-gold-400 transition-colors"
-            aria-label="Close menu"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        {/* Top padding keeps the first link clear of the floating header; scrolls on short screens instead of clipping. */}
+        <nav className="relative h-full overflow-y-auto bg-gradient-to-b from-white via-white to-gold-50 px-6 pt-28 pb-12 text-black">
+          <div className="flex min-h-full flex-col items-center justify-center gap-5 sm:gap-6">
           {navItems.map((item, i) => (
             <a
               key={item.id}
@@ -143,6 +139,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
           <button onClick={handleBookingNavigation} tabIndex={mobileOpen ? 0 : -1} className="btn-gold mt-4">
             Join Now
           </button>
+          </div>
         </nav>
       </div>
     </>

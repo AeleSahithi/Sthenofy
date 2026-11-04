@@ -61,9 +61,9 @@ The admin-slots migration adds `blocked` bookings (time the admin is unavailable
 Customers pay through the static PayU payment link `https://u.payu.in/8rW2Lhb18XZD` (set in `PAYU_PAYMENT_LINK` in `src/lib/appointments.ts`). No merchant key or salt is used by the website.
 
 1. The customer picks a service (price from Supabase), a slot, and fills in their details.
-2. **Reserve Slot** calls `create_booking`, which holds the slot for 60 minutes and saves the service price from the database in `bookings.amount`.
+2. **Reserve Slot** calls `create_booking`, which holds the slot for 10 minutes (`PAYMENT_HOLD_MINUTES`) and saves the service price from the database in `bookings.amount`. The customer sees a countdown; an abandoned payment frees the slot when the hold ends, and **Book another slot** frees it immediately (`release_booking_hold`).
 3. **Pay Now** opens the PayU link in a new tab. Clicking it never changes payment status.
-4. After paying, the customer can submit their PayU transaction ID. This only records the reference and keeps the slot held for 24 hours; it does not mark anything paid.
+4. After paying, the customer can submit their PayU transaction ID. This only records the reference and keeps the slot held for 24 hours; it does not mark anything paid. A reference submitted after the 10-minute hold ended is still recorded: the slot is taken back if it is still free, otherwise the booking shows as "Reservation expired · customer submitted payment" for you to reschedule or refund (migration `20261105000000_short_holds_and_release.sql`).
 5. The admin checks the payment in the PayU dashboard (amount, email, phone, transaction ID) and clicks **Confirm payment** in Admin → Bookings. Only then is the booking `confirmed / paid`.
 
 Limitation: a static payment link cannot receive the booking ID or the amount from the website, and PayU does not tell the website which booking a link payment belongs to. If the link has a fixed amount, every customer pays that amount whatever the service price is; if it lets the customer enter an amount, the customer could enter the wrong amount. That is why the admin compares the PayU payment with `bookings.amount` before confirming.

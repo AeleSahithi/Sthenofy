@@ -17,6 +17,11 @@ export const PHONE_TITLE = 'Enter a valid phone number, e.g. +91 98765 43210';
 
 export const whatsappLink = (message: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
+/** Google Maps search terms for each studio, shared by the contact page and footer. */
+export const BENGALURU_MAPS_QUERY = 'H No 162 8th cross 29th Main MCHS Colony BTM 2nd stage Bengaluru 560076';
+export const HYDERABAD_MAPS_QUERY = 'Plot no 28/1 sy no 167 Krishnapuram colony Mailardevpally Hyderabad 500005';
+export const mapsLink = (query: string) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
 const base = import.meta.env.BASE_URL;
 
 const routes: Record<PageId, { path: string; title: string; description: string }> = {
@@ -32,8 +37,8 @@ const routes: Record<PageId, { path: string; title: string; description: string 
   },
   trainers: {
     path: 'trainers',
-    title: 'Our Coaches — STHENOFY',
-    description: 'Meet the STHENOFY coaches: strength and conditioning, personal training, and clinical nutrition specialists.',
+    title: 'Our Team — STHENOFY',
+    description: 'Meet the STHENOFY team: strength and conditioning, personal training, and clinical nutrition specialists.',
   },
   gallery: {
     path: 'about',

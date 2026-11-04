@@ -89,8 +89,8 @@ export interface CreateBookingInput {
 
 /** Static PayU payment link. It cannot receive a booking ID or amount from this site. */
 export const PAYU_PAYMENT_LINK = 'https://u.payu.in/8rW2Lhb18XZD';
-/** How long a customer's reservation is held while they pay via the link. */
-export const PAYMENT_HOLD_MINUTES = 60;
+/** How long a customer's reservation is held while they pay via the link. Kept short so abandoned payments free the slot quickly. */
+export const PAYMENT_HOLD_MINUTES = 10;
 
 export function formatMoney(amount: number, currency = 'INR'): string {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
@@ -208,12 +208,25 @@ export async function createBooking(input: CreateBookingInput): Promise<Booking>
   return data as Booking;
 }
 
-/** Records the customer's PayU transaction ID for admin verification; never marks the booking paid. */
-export async function submitPaymentReference(bookingId: string, customerEmail: string, reference: string): Promise<void> {
-  const { error } = await requireSupabase().rpc('submit_payment_reference', {
+/**
+ * Records the customer's PayU transaction ID for admin verification; never marks the booking paid.
+ * Works after the hold lapsed too: 'slot_taken' means someone else booked the time meanwhile.
+ */
+export async function submitPaymentReference(bookingId: string, customerEmail: string, reference: string): Promise<'held' | 'slot_taken'> {
+  const { data, error } = await requireSupabase().rpc('submit_payment_reference', {
     p_booking_id: bookingId,
     p_customer_email: customerEmail,
     p_reference: reference,
+  });
+  if (error) throw error;
+  return data === 'slot_taken' ? 'slot_taken' : 'held';
+}
+
+/** Frees the customer's own unpaid hold so the slot is available again straight away. */
+export async function releaseBookingHold(bookingId: string, customerEmail: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('release_booking_hold', {
+    p_booking_id: bookingId,
+    p_customer_email: customerEmail,
   });
   if (error) throw error;
 }

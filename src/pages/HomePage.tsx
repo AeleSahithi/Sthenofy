@@ -332,7 +332,7 @@ export default function HomePage({ onNavigate }: HomePageProps) {
             YOUR TRANSFORMATION<br /><span className="text-gold-500">STARTS TODAY</span>
           </h2>
           <p className="text-white text-base sm:text-lg max-w-2xl mx-auto mb-8">
-            Join 500+ members who decided to stop waiting. No contracts, no pressure — just results.
+            Stop waiting. Start training with purpose, build lasting habits, and become stronger with STHENOFY.
           </p>
           <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
             <button onClick={goToBooking} className="btn-gold text-xs sm:text-sm">

@@ -2,7 +2,7 @@
 import { Instagram, Linkedin, Youtube, MapPin, Phone, Mail } from 'lucide-react';
 import sthenofyLogo from '@/assets/sthenofy-logo-text-black.png';
 import type { PageId } from './Navbar';
-import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, SUPPORT_EMAIL, linkProps } from '@/lib/site';
+import { BENGALURU_MAPS_QUERY, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, HYDERABAD_MAPS_QUERY, SUPPORT_EMAIL, linkProps, mapsLink } from '@/lib/site';
 
 interface FooterProps {
   onNavigate: (page: PageId) => void;
@@ -76,7 +76,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               {[
                 { id: 'home' as PageId, label: 'Home' },
                 { id: 'services' as PageId, label: 'Services' },
-                { id: 'trainers' as PageId, label: 'Trainers' },
+                { id: 'trainers' as PageId, label: 'Team' },
                 { id: 'gallery' as PageId, label: 'About Us' },
                 { id: 'blog' as PageId, label: 'Blog' },
                 { id: 'contact' as PageId, label: 'Contact' },
@@ -100,20 +100,34 @@ export default function Footer({ onNavigate }: FooterProps) {
             </h4>
 
             <ul className="space-y-4">
-              <li className="flex items-start gap-3 text-ink-300 text-sm">
-                <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
-                <span>
-                  H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage,
-                  Bengaluru, 560076
-                </span>
+              <li>
+                <a
+                  href={mapsLink(BENGALURU_MAPS_QUERY)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 text-ink-300 text-sm hover:text-gold-400 transition-colors"
+                >
+                  <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
+                  <span>
+                    H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage,
+                    Bengaluru, 560076
+                  </span>
+                </a>
               </li>
 
-              <li className="flex items-start gap-3 text-ink-300 text-sm">
-                <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
-                <span>
-                  Plot no 28/1, sy no 167, Krishnapuram colony, Mailardevpally,
-                  Hyderabad - 500005
-                </span>
+              <li>
+                <a
+                  href={mapsLink(HYDERABAD_MAPS_QUERY)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 text-ink-300 text-sm hover:text-gold-400 transition-colors"
+                >
+                  <MapPin className="w-4 h-4 text-gold-400 mt-0.5 shrink-0" />
+                  <span>
+                    Plot no 28/1, sy no 167, Krishnapuram colony, Mailardevpally,
+                    Hyderabad - 500005
+                  </span>
+                </a>
               </li>
 
               <li className="flex items-center gap-3 text-ink-300 text-sm">

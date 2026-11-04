@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, Phone, Mail, Send, Check, MessageCircle } from 'lucide-react';
-import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, PHONE_PATTERN, PHONE_TITLE, SUPPORT_EMAIL, whatsappLink } from '@/lib/site';
+import { BENGALURU_MAPS_QUERY, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, HYDERABAD_MAPS_QUERY, mapsLink, PHONE_PATTERN, PHONE_TITLE, SUPPORT_EMAIL, whatsappLink } from '@/lib/site';
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -59,26 +59,38 @@ export default function ContactPage() {
             {/* Info cards */}
             <div className="lg:col-span-2 space-y-4">
               {[
-                { icon: MapPin, title: 'Visit Us', value: '29th Main, MCHS Colony, BTM 2nd stage, Bengaluru' },
-                { icon: MapPin, title: 'Visit Us', value: 'Krishnapuram colony, Mailardevpally, Hyderabad' },
+                { icon: MapPin, title: 'Visit Us', value: '29th Main, MCHS Colony, BTM 2nd stage, Bengaluru', href: mapsLink(BENGALURU_MAPS_QUERY), external: true },
+                { icon: MapPin, title: 'Visit Us', value: 'Krishnapuram colony, Mailardevpally, Hyderabad', href: mapsLink(HYDERABAD_MAPS_QUERY), external: true },
                 { icon: Phone, title: 'Call Us', value: CONTACT_PHONE_DISPLAY, href: CONTACT_PHONE_TEL },
                 { icon: MessageCircle, title: 'WhatsApp', value: 'Chat with us on WhatsApp', href: whatsappLink('Hi Sthenofy, I have a question.'), external: true },
                 { icon: Mail, title: 'Email Us', value: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
-              ].map((item, i) => (
-                <div key={i} className="glass rounded-2xl p-6 flex items-start gap-4 card-hover">
-                  <div className="w-12 h-12 rounded-xl bg-gold-400/10 flex items-center justify-center shrink-0">
-                    <item.icon className="w-6 h-6 text-gold-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-display text-lg uppercase tracking-wide mb-1">{item.title}</h3>
-                    {item.href ? (
-                      <a href={item.href} {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} className="text-ink-300 text-sm whitespace-pre-line leading-relaxed hover:text-gold-400 transition-colors">{item.value}</a>
-                    ) : (
-                      <p className="text-ink-300 text-sm whitespace-pre-line leading-relaxed">{item.value}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
+              ].map((item, i) => {
+                const content = (
+                  <>
+                    <div className="w-12 h-12 rounded-xl bg-gold-400/10 flex items-center justify-center shrink-0 transition-colors group-hover:bg-gold-400">
+                      <item.icon className="w-6 h-6 text-gold-400 transition-colors group-hover:text-black" />
+                    </div>
+                    <div>
+                      <h3 className="font-display text-lg uppercase tracking-wide mb-1">{item.title}</h3>
+                      <p className="text-ink-300 text-sm whitespace-pre-line leading-relaxed transition-colors group-hover:text-gold-500">{item.value}</p>
+                    </div>
+                  </>
+                );
+                const cardClass = 'glass rounded-2xl p-6 flex items-start gap-4 card-hover';
+                // Linked cards are clickable anywhere, not just on the phone number or email.
+                return item.href ? (
+                  <a
+                    key={i}
+                    href={item.href}
+                    {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    className={`${cardClass} group cursor-pointer hover:border-gold-400/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold-400`}
+                  >
+                    {content}
+                  </a>
+                ) : (
+                  <div key={i} className={cardClass}>{content}</div>
+                );
+              })}
             </div>
 
             {/* Form */}
@@ -195,12 +207,12 @@ export default function ContactPage() {
               {
                 title: 'Bengaluru',
                 address: 'H. No: 162, 8th cross, 29th Main, MCHS Colony, BTM 2nd stage, Bengaluru, 560076',
-                query: 'H No 162 8th cross 29th Main MCHS Colony BTM 2nd stage Bengaluru 560076',
+                query: BENGALURU_MAPS_QUERY,
               },
               {
                 title: 'Hyderabad',
                 address: 'Plot no 28/1, sy no 167, Krishnapuram colony, Mailardevpally, Hyderabad - 500005',
-                query: 'Plot no 28/1 sy no 167 Krishnapuram colony Mailardevpally Hyderabad 500005',
+                query: HYDERABAD_MAPS_QUERY,
               },
             ].map((location) => (
               <div key={location.title} className="glass overflow-hidden rounded-2xl">

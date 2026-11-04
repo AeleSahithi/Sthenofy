@@ -145,6 +145,10 @@ const pageContent: Record<LegalPageType, { title: string; intro: string; section
   },
 };
 
+// The legal entity name is shown in bold wherever it appears.
+const BOLD_TEXT = 'STHENOS WELLNESS LLP d/b/a “STHENOFY”';
+const BOLD_PHRASE = new RegExp(`(${BOLD_TEXT.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')})`);
+
 export default function LegalPage({ type }: LegalPageProps) {
   const content = pageContent[type];
 
@@ -173,7 +177,9 @@ export default function LegalPage({ type }: LegalPageProps) {
                 </h2>
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph} className="text-ink-200 leading-relaxed mb-3 last:mb-0">
-                    {paragraph}
+                    {paragraph.split(BOLD_PHRASE).map((part, i) =>
+                      part === BOLD_TEXT ? <strong key={i} className="font-bold text-ink-50">{part}</strong> : part
+                    )}
                   </p>
                 ))}
               </section>
