@@ -61,16 +61,19 @@ jobs:
           FTP_SERVER: ${{ secrets.FTP_SERVER }}
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          # The server's *.hstgr.io name (e.g. srv1234.hstgr.io, shown in hPanel's File Manager) so the
+          # TLS certificate verifies. Hostinger can move a site to a new server, so it is a variable,
+          # not hard-coded. Without it this diagnostic step uses FTP_SERVER and may fail verification.
+          FTP_TLS_HOST: ${{ vars.FTP_TLS_HOST }}
         run: |
           sudo apt-get install -y -qq lftp > /dev/null
-          # srv1833.hstgr.io is the hosting server shown by hPanel's File Manager; its certificate
-          # (*.hstgr.io) matches that name, so TLS is fully verified. The FTP IP alone does not match.
-          host="srv1833.hstgr.io"
+          host="${FTP_TLS_HOST:-$FTP_SERVER}"
           lftp -u "$FTP_USERNAME,$FTP_PASSWORD" "$host" -e "
             set ftp:ssl-force yes; set net:max-retries 2; set net:timeout 20;
             echo '== login folder:'; pwd;
             echo '== login folder contents:'; cls -1a;
             echo '== public_html:'; cls -1a public_html;
+            echo '== public_html/assets:'; cls -1a public_html/assets;
             echo '== domains:'; cls -1a domains;
             echo '== domains/sthenofy.com:'; cls -1a domains/sthenofy.com;
             echo '== domains/sthenofy.com/public_html:'; cls -1a domains/sthenofy.com/public_html;
