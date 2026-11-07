@@ -56,26 +56,22 @@ Then `supabase/migrations/20261031000000_restrict_internal_functions.sql`, which
 
 The admin-slots migration adds `blocked` bookings (time the admin is unavailable), admin-created bookings, PayU payment-link bookings, a `bookings.amount` price snapshot that the database fills from `service_types`, and one-hour appointment blocks. Blocked time and confirmed/held bookings all show as **Booked** on the public calendar, and the database prevents any overlap between them.
 
-### Customer booking and PayU payment (verified on the server)
+### Customer booking and PayU payment link
 
-Migration `20261107000000_paid_checkout_and_dual_calendar.sql` (run after `20261101…` and `20261105…`).
+Customers pay with the PayU payment link `https://u.payu.in/8rW2Lhb18XZD` (`PAYU_PAYMENT_LINK` in `src/lib/appointments.ts`). No merchant key or salt is used.
 
 1. Services page → **Get Started** scrolls to **Book your consultation** with that service preselected (`/services/?service=diabetes` also works). The fee is shown under the heading: one price when every visible service costs the same, otherwise "from" the lowest price.
 2. The customer picks a service card, a date (times are checked live against both Google Calendars) and a time, and fills in their details.
-3. **Pay & Book** calls the `booking-checkout` Edge Function. It re-checks both calendars, holds the slot for 10 minutes (`create_checkout_hold`; the price comes from `service_types`, never from the browser) and returns a signed PayU form. The browser goes to PayU's checkout page.
-4. PayU posts the result to `payu-payment`, which checks the response hash, asks PayU's `verify_payment` API, and compares the amount with `bookings.amount`. Only then does `record_verified_payment` mark the booking paid. A failed or cancelled payment frees the slot at once.
-5. The `booking-worker` creates the event in every connected Google Calendar (one Meet link), stores both event IDs, and only then sets the booking to `confirmed`. That sends exactly one confirmation email (Meet link, .ics invitation, questionnaire link) and one "New booking (paid)" email to the admin.
-6. The customer's page waits for the confirmation, then redirects to the service's questionnaire.
+3. **Reserve Slot** calls the `booking-checkout` Edge Function (`reserve`). It re-checks both calendars live and calls `create_booking`, which holds the slot for 10 minutes and copies the price from `service_types`. The customer sees a countdown and the **Pay Now** button; **Choose a different time** frees the slot at once (`release_booking_hold`).
+4. After paying, the customer enters their PayU transaction ID (`submit_payment_reference`, which keeps the slot for 24 hours) and is then taken to their service's questionnaire.
+5. You check the payment in the PayU dashboard (amount, email, phone, transaction ID) and click **Confirm payment** in Admin → Bookings. The worker then adds the event to both Google Calendars (one Meet link, both event IDs stored) and sends one confirmation email with the Meet link, .ics invitation and questionnaire link.
 
-If Google Calendar does not respond, the worker retries for about an hour; the booking shows under **Needs attention** in Admin → Bookings with **Confirm now**. A payment that arrives after the slot was retaken, or with the wrong amount, also shows there.
-
-PayU secrets (Supabase → Edge Functions → Secrets): `PAYU_MERCHANT_KEY`, `PAYU_MERCHANT_SALT`, and `PAYU_ENVIRONMENT=production` for real payments (any other value uses PayU's test system). In the PayU dashboard, add the webhook URL `https://fmexlqqgdrdkboefeguk.supabase.co/functions/v1/payu-payment?source=webhook` for successful and failed payments, so a customer who closes the tab after paying is still confirmed.
+Limitation: a payment link cannot tell the website which booking was paid, so payments cannot be verified automatically; that is why you confirm them. Server-side verification would need PayU's merchant checkout (key and salt).
 
 ### Questionnaires (Google Forms)
 
-Admin → **Services & Pricing** → paste each service's Google Form link (`https://docs.google.com/forms/…` or `https://forms.gle/…`) and **Save**. It is stored in `service_types.questionnaire_url`. It is used for the redirect after confirmation, the confirmation email and the 24-hour reminder. A service without a link simply has no redirect.
+Admin → **Services & Pricing** → paste each service's Google Form link (`https://docs.google.com/forms/…` or `https://forms.gle/…`) and **Save**. It is stored in `service_types.questionnaire_url`. It is used for the redirect after the customer submits their PayU transaction ID, the confirmation email and the 24-hour reminder. A service without a link simply has no redirect.
 
-The old static payment link flow (`submit_payment_reference`, `release_booking_hold`) stays in the database for older bookings but the website no longer uses it.
 
 ## 3. Create the first admin
 
@@ -167,10 +163,9 @@ Setup order:
    supabase functions deploy google-oauth --no-verify-jwt
    supabase functions deploy google-calendar-webhook --no-verify-jwt
    supabase functions deploy booking-checkout --no-verify-jwt
-   supabase functions deploy payu-payment --no-verify-jwt
    ```
 
-   Each checks authorisation itself (a database-generated secret, the admin's session, the Google channel token, or the PayU hash), and PayU and Google cannot send a Supabase JWT, which is why JWT verification is off.
+   Each checks authorisation itself (a database-generated secret, the admin's session, or the Google channel token), and Google cannot send a Supabase JWT, which is why JWT verification is off.
 
 2. **Email (Resend):** create an account at resend.com, add the domain `sthenofy.com`, and add the DNS records Resend shows in Hostinger → DNS / Nameservers. Resend uses the `send` subdomain and a `resend._domainkey` record, so the Google Workspace MX and SPF records on the main domain are untouched. Create an API key.
 3. **Google Calendar:** signed in to Google Cloud Console with the Workspace account whose calendar should receive bookings:

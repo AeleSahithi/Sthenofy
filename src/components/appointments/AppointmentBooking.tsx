@@ -1,23 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Check, CheckCircle2, Loader2 } from 'lucide-react';
 import {
   calendarDateKey,
   commonPrice,
   fetchActiveServices,
   fetchBookedIntervals,
-  fetchBookingStatus,
   fetchLiveBusy,
   fetchScheduleData,
   formatMoney,
   getDaySlots,
   getLocalAppointmentDate,
   overlapsInterval,
+  PAYMENT_HOLD_MINUTES,
+  PAYU_PAYMENT_LINK,
   QUESTIONNAIRE_URL_PATTERN,
-  startCheckout,
-  submitToPayU,
+  releaseBookingHold,
+  reserveSlot,
+  submitPaymentReference,
   type AvailabilitySlot,
   type BookedInterval,
-  type BookingStatusInfo,
+  type Booking,
   type ScheduleException,
   type ServiceType,
   type WorkingHours,
@@ -28,11 +30,20 @@ const inputClass = 'w-full rounded-lg border border-ink-50/10 bg-ink-900 px-4 py
 const today = new Date();
 const todayKey = getLocalAppointmentDate(today);
 const formatPrice = (service: ServiceType) => formatMoney(Number(service.price), service.currency);
+const istTime = (iso: string) => new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
 const istWhen = (startsAt: string, endsAt: string) => {
   const day = new Date(startsAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'long', day: 'numeric', month: 'long' });
-  const time = (iso: string) => new Date(iso).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
-  return `${day}, ${time(startsAt)} – ${time(endsAt)} IST`;
+  return `${day}, ${istTime(startsAt)} – ${istTime(endsAt)} IST`;
 };
+
+/** The PayU "Pay Now" button, styled as provided by the client. */
+const payNowStyle: React.CSSProperties = {
+  width: 200, backgroundColor: '#0D1E29', textAlign: 'center', fontWeight: 800, padding: '11px 0px', color: 'white',
+  fontSize: 12, display: 'inline-block', textDecoration: 'none', borderRadius: 3.229,
+};
+
+/** Seconds before the customer is taken to their service's questionnaire. */
+const REDIRECT_SECONDS = 5;
 
 /** Turns technical failures into messages a customer can act on. */
 function friendlyError(reason: unknown, fallback: string): string {
@@ -57,101 +68,93 @@ function findService(services: ServiceType[], keyword: string | null | undefined
   return services.find((item) => item.id === keyword || item.slug === wanted || item.name.toLowerCase().includes(wanted));
 }
 
-/** The ?payment=...&booking=... that payu-payment adds when PayU sends the customer back. */
-function readPaymentReturn() {
-  const params = new URLSearchParams(window.location.search);
-  const payment = params.get('payment');
-  const booking = params.get('booking');
-  return payment ? { payment, booking } : null;
+interface Reservation {
+  booking: Booking;
+  service: ServiceType;
 }
 
-function clearPaymentReturn() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete('payment');
-  url.searchParams.delete('booking');
-  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-}
-
-const POLL_MS = 3000;
-const POLL_LIMIT_MS = 90_000;
-const REDIRECT_SECONDS = 5;
-
-/** After PayU: waits for the server to verify the payment and confirm the booking, then opens the questionnaire. */
-function PaymentResult({ payment, bookingId, onDone }: { payment: string; bookingId: string | null; onDone: () => void }) {
-  const failed = payment === 'failed' || payment === 'invalid' || !bookingId;
-  const [info, setInfo] = useState<BookingStatusInfo | null>(null);
-  const [timedOut, setTimedOut] = useState(false);
+/** After reserving: pay via the PayU link, submit the transaction ID, then go to the service's questionnaire. */
+function PaymentPanel({ reservation, onStartOver }: { reservation: Reservation; onStartOver: (release: boolean) => void }) {
+  const { booking, service } = reservation;
+  const [now, setNow] = useState(Date.now());
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<'held' | 'slot_taken' | null>(null);
   const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
-  const started = useRef(Date.now());
+  const form = service.questionnaire_url && QUESTIONNAIRE_URL_PATTERN.test(service.questionnaire_url) ? service.questionnaire_url : null;
+  const amount = booking.amount != null ? formatMoney(Number(booking.amount), booking.currency || 'INR') : formatPrice(service);
 
-  const confirmed = info?.status === 'confirmed' && info.payment_status === 'paid';
-  const paid = info?.payment_status === 'paid';
-  const form = info?.questionnaire_url && QUESTIONNAIRE_URL_PATTERN.test(info.questionnaire_url) ? info.questionnaire_url : null;
-
+  // Countdown while the unpaid hold is open.
   useEffect(() => {
-    if (failed || confirmed || timedOut) return;
-    let cancelled = false;
-    const poll = async () => {
-      try {
-        const next = await fetchBookingStatus(bookingId!);
-        if (!cancelled) setInfo(next);
-      } catch { /* keep polling */ }
-      if (!cancelled && Date.now() - started.current > POLL_LIMIT_MS) setTimedOut(true);
-    };
-    void poll();
-    const timer = window.setInterval(() => void poll(), POLL_MS);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [bookingId, failed, confirmed, timedOut]);
+    if (result) return;
+    const tick = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(tick);
+  }, [result]);
 
-  // Only after the booking is confirmed (payment verified on the server and both calendars updated).
+  // After the transaction ID is submitted, open this service's questionnaire.
   useEffect(() => {
-    if (!confirmed || !form) return;
+    if (!result || !form) return;
     if (countdown <= 0) { window.location.assign(form); return; }
     const tick = window.setTimeout(() => setCountdown((value) => value - 1), 1000);
     return () => window.clearTimeout(tick);
-  }, [confirmed, form, countdown]);
+  }, [result, form, countdown]);
 
-  const box = 'glass rounded-2xl p-6 sm:p-10 max-w-2xl mx-auto text-center space-y-4';
-  const anotherButton = <button type="button" className="btn-outline" onClick={onDone}>Book another session</button>;
+  const sendReference = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting || !booking.customer_email) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const reference = String(new FormData(event.currentTarget).get('reference') || '');
+      setResult(await submitPaymentReference(booking.id, booking.customer_email, reference));
+    } catch (reason) {
+      setError(friendlyError(reason, 'Unable to send the payment reference.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  if (failed || info?.payment_status === 'failed') return <div className={box} role="status">
-    <XCircle className="w-12 h-12 mx-auto text-red-500" aria-hidden="true" />
-    <h3 className="font-display text-2xl">PAYMENT NOT COMPLETED</h3>
-    <p className="text-ink-300">The payment was cancelled or did not go through, so no money was taken for this booking and the slot has been released. You can choose a time and try again.</p>
-    <button type="button" className="btn-gold" onClick={onDone}>Try again</button>
+  const msLeft = booking.hold_expires_at ? new Date(booking.hold_expires_at).getTime() - now : 0;
+  const timeLeft = `${Math.floor(Math.max(msLeft, 0) / 60_000)}:${String(Math.floor((Math.max(msLeft, 0) % 60_000) / 1000)).padStart(2, '0')}`;
+  const summary = <div className="rounded-lg border border-gold-400/30 bg-gold-400/10 p-4 text-sm space-y-1 text-left">
+    <p><span className="text-ink-300">Service:</span> <b className="text-ink-50">{service.name}</b></p>
+    <p><span className="text-ink-300">Time:</span> <b className="text-ink-50">{istWhen(booking.starts_at, booking.ends_at)}</b></p>
+    <p><span className="text-ink-300">Amount to pay:</span> <b className="text-ink-50">{amount}</b></p>
+    <p><span className="text-ink-300">Booking reference:</span> <b className="text-ink-50">{booking.id.slice(0, 8).toUpperCase()}</b></p>
   </div>;
 
-  if (confirmed) return <div className={box} role="status">
+  if (result) return <div className="glass rounded-2xl p-6 sm:p-10 max-w-2xl mx-auto text-center space-y-4" role="status">
     <CheckCircle2 className="w-12 h-12 mx-auto text-green-600" aria-hidden="true" />
-    <h3 className="font-display text-2xl">BOOKING CONFIRMED</h3>
-    {info && <p className="text-ink-200"><b>{info.service_name}</b><br />{istWhen(info.starts_at, info.ends_at)}</p>}
-    <p className="text-ink-300 text-sm">Your confirmation email with the meeting link and calendar invitation is on its way.</p>
+    <h3 className="font-display text-2xl">THANK YOU!</h3>
+    {summary}
+    <p className="text-ink-300 text-sm">{result === 'held'
+      ? 'We received your PayU transaction ID. We will verify the payment and email your confirmation with the meeting link and calendar invitation.'
+      : 'We received your PayU transaction ID. Your reservation ended before it was submitted and this time has since been booked, so we will contact you to choose another slot or arrange a refund.'}</p>
     {form ? <>
-      <p className="text-ink-200">Next, tell us about yourself in the {info?.service_name} questionnaire. Opening it in <b className="text-gold-500 tabular-nums">{countdown}</b>s…</p>
+      <p className="text-ink-200">Next, tell us about yourself in the {service.name} questionnaire. Opening it in <b className="text-gold-500 tabular-nums">{countdown}</b>s…</p>
       <a href={form} className="btn-gold inline-flex">Open questionnaire now</a>
-    </> : anotherButton}
+    </> : <button type="button" className="btn-outline" onClick={() => onStartOver(false)}>Book another session</button>}
   </div>;
 
-  if (paid && (info?.needs_attention || timedOut)) return <div className={box} role="status">
-    <CheckCircle2 className="w-12 h-12 mx-auto text-green-600" aria-hidden="true" />
-    <h3 className="font-display text-2xl">PAYMENT RECEIVED</h3>
-    <p className="text-ink-300">{info?.needs_attention
-      ? 'We received your payment. Our team needs to finalise this booking and will contact you shortly by email or WhatsApp.'
-      : 'We received your payment and are adding the session to our calendar. Your confirmation email will arrive shortly.'}</p>
-    {form && <a href={form} className="btn-gold inline-flex">Fill in your questionnaire</a>}
-  </div>;
-
-  if (timedOut) return <div className={box} role="status">
-    <Loader2 className="w-12 h-12 mx-auto text-gold-500" aria-hidden="true" />
-    <h3 className="font-display text-2xl">CHECKING YOUR PAYMENT</h3>
-    <p className="text-ink-300">PayU has not confirmed this payment yet. If money was taken, we will email your confirmation as soon as PayU confirms it. If you need help, message us on WhatsApp with booking reference <b>{bookingId!.slice(0, 8).toUpperCase()}</b>.</p>
-    {anotherButton}
-  </div>;
-
-  return <div className={box} role="status" aria-live="polite">
-    <Loader2 className="w-12 h-12 mx-auto text-gold-500 animate-spin" aria-hidden="true" />
-    <h3 className="font-display text-2xl">{paid ? 'PAYMENT VERIFIED' : 'VERIFYING YOUR PAYMENT'}</h3>
-    <p className="text-ink-300">{paid ? 'Adding your session to our calendar and confirming your booking…' : 'Checking your payment with PayU. Please keep this page open.'}</p>
+  return <div className="glass rounded-2xl p-6 sm:p-10 max-w-2xl mx-auto space-y-5">
+    <h3 className="font-display text-2xl text-center">COMPLETE YOUR PAYMENT</h3>
+    {summary}
+    {msLeft <= 0
+      ? <p role="status" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">Your {PAYMENT_HOLD_MINUTES}-minute hold has ended and the slot may be booked by someone else. If you have already paid, submit your PayU transaction ID below and we will contact you.</p>
+      : <p role="timer" className="rounded-lg border border-ink-50/10 p-3 text-sm text-ink-200">Complete payment within <b className="font-display text-lg text-gold-500 tabular-nums">{timeLeft}</b> to keep this slot. Unpaid slots are released automatically.</p>}
+    <ol className="list-decimal pl-5 text-sm text-ink-300 space-y-1">
+      <li>Click <b>Pay Now</b> and pay <b>{amount}</b> on PayU.</li>
+      <li>Use the same email ({booking.customer_email}) and phone on PayU so we can match your payment.</li>
+      <li>Come back to this page and enter your PayU transaction ID.</li>
+    </ol>
+    <div className="text-center"><a href={PAYU_PAYMENT_LINK} target="_blank" rel="noopener noreferrer" style={payNowStyle}>Pay Now</a></div>
+    <form onSubmit={(event) => void sendReference(event)} className="space-y-2 border-t border-ink-50/10 pt-4">
+      <label className="block text-sm text-ink-200">PayU transaction ID (after paying)<input className={`${inputClass} mt-2`} name="reference" maxLength={100} autoComplete="off" required /></label>
+      <button className="btn-gold w-full" disabled={submitting}>{submitting ? 'Sending...' : 'I have paid — submit transaction ID'}</button>
+    </form>
+    {error && <p className="text-red-600 text-sm" role="alert">{error}</p>}
+    <p className="text-xs text-ink-400">Your appointment is confirmed once we verify the payment with PayU; we then email your confirmation, meeting link and calendar invitation.</p>
+    <button type="button" className="text-sm text-ink-300 hover:text-gold-400" onClick={() => onStartOver(true)}>← Choose a different time</button>
   </div>;
 }
 
@@ -169,7 +172,7 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [paymentReturn, setPaymentReturn] = useState(readPaymentReturn);
+  const [reservation, setReservation] = useState<Reservation | null>(null);
 
   const service = services.find((item) => item.id === serviceId);
   const fee = useMemo(() => commonPrice(services), [services]);
@@ -192,18 +195,13 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
       .finally(() => setLoading(false));
   }, []);
 
-  // Returning from PayU: show the result section (the app renders after the browser's #anchor jump).
-  useEffect(() => {
-    if (readPaymentReturn()) window.setTimeout(() => document.getElementById('appointment-booking')?.scrollIntoView({ block: 'start' }), 50);
-  }, []);
-
   // "Get Started" on a Services-page card selects that service here.
   useEffect(() => {
     const match = findService(services, requestedService?.keyword);
     if (match) setServiceId(match.id);
   }, [requestedService, services]);
 
-  /** Bookings and synced busy times from the database, plus a live check of both Google Calendars. */
+  /** Bookings and synced busy times from the database, plus (live) a check of both Google Calendars. */
   const refreshBooked = useCallback(async (live = false) => {
     if (!slots.length) {
       setStoredBusy([]);
@@ -238,17 +236,6 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
     }
   }, [selectedSlot, isBooked]);
 
-  // Coming back from PayU with the browser's Back button restores this page from cache.
-  useEffect(() => {
-    const restore = (event: PageTransitionEvent) => {
-      if (!event.persisted) return;
-      setSubmitting(false);
-      void refreshBooked(true).catch(() => undefined);
-    };
-    window.addEventListener('pageshow', restore);
-    return () => window.removeEventListener('pageshow', restore);
-  }, [refreshBooked]);
-
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitting) return;
@@ -258,8 +245,8 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
     setError('');
     try {
       const data = new FormData(event.currentTarget);
-      // The server re-checks both calendars, holds the slot and signs the PayU payment for the database price.
-      const checkout = await startCheckout({
+      // The server re-checks both calendars and holds the slot; the price comes from the database.
+      const booking = await reserveSlot({
         serviceTypeId: service.id,
         name: String(data.get('name') || '').trim(),
         email: String(data.get('email') || '').trim(),
@@ -267,20 +254,27 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
         notes: String(data.get('notes') || '').trim(),
         startsAt: selectedSlot.startsAt,
       });
-      submitToPayU(checkout.action, checkout.fields); // leaves the page; submitting stays true
+      setReservation({ booking, service });
+      document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } catch (reason) {
       await refreshBooked(true).catch(() => undefined);
-      setError(friendlyError(reason, 'Unable to start the payment. Please try again.'));
+      setError(`Unable to reserve the selected slot: ${friendlyError(reason, 'Please try again.')}`);
+    } finally {
       setSubmitting(false);
     }
   };
 
-  const finishPayment = () => {
-    clearPaymentReturn();
-    setPaymentReturn(null);
+  const startOver = (release: boolean) => {
+    // An unpaid hold is released straight away so the slot is free for everyone again.
+    if (release && reservation?.booking.customer_email) {
+      void releaseBookingHold(reservation.booking.id, reservation.booking.customer_email)
+        .catch(() => undefined)
+        .then(() => refreshBooked(true))
+        .catch(() => undefined);
+    }
+    setReservation(null);
     setSelectedSlot(null);
     setError('');
-    void refreshBooked(true).catch(() => undefined);
   };
 
   const stepLabel = (n: number, text: string) => <h3 className="flex items-center gap-3 font-display text-xl sm:text-2xl"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold-400 text-sm font-bold text-ink-950">{n}</span>{text}</h3>;
@@ -296,10 +290,10 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
             <span className="font-display text-4xl sm:text-5xl text-ink-50">{fee ? formatMoney(fee.amount, fee.currency) : formatPrice(lowestPrice!)}</span>
             <span className="text-xs text-ink-400">One-hour online session · secure payment via PayU</span>
           </div>}
-          <p className="text-ink-300 mt-5 max-w-2xl mx-auto">Choose your service, pick a time that suits you, and pay securely. Your booking is confirmed the moment your payment is verified.</p>
+          <p className="text-ink-300 mt-5 max-w-2xl mx-auto">Choose your service, pick a time that suits you, and pay securely through PayU.</p>
         </div>
 
-        {paymentReturn ? <PaymentResult payment={paymentReturn.payment} bookingId={paymentReturn.booking} onDone={finishPayment} /> : <>
+        {reservation ? <PaymentPanel reservation={reservation} onStartOver={startOver} /> : <>
           {loading && <p className="text-center text-ink-300">Loading availability...</p>}
           {!loading && services.length === 0 && <div className="glass rounded-2xl p-8 text-center text-ink-300">{error || 'No appointment services are configured yet. An administrator must add services and prices in Supabase.'}</div>}
           {!loading && services.length > 0 && <form onSubmit={(event) => void submit(event)} className="space-y-8">
@@ -339,7 +333,7 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
               </div>
 
               <div className="glass rounded-2xl p-5 sm:p-8 space-y-4">
-                {stepLabel(3, 'YOUR DETAILS & PAYMENT')}
+                {stepLabel(3, 'YOUR DETAILS')}
                 <div className="rounded-lg border border-gold-400/30 bg-gold-400/10 p-4 text-sm space-y-1">
                   <p><span className="text-ink-300">Service:</span> <b className="text-ink-50">{service?.name ?? 'Choose a service above'}</b></p>
                   <p><span className="text-ink-300">Time:</span> <b className="text-ink-50">{selectedSlot ? istWhen(selectedSlot.startsAt, selectedSlot.endsAt) : 'Pick a time'}</b></p>
@@ -350,9 +344,9 @@ export default function AppointmentBooking({ requestedService }: { requestedServ
                 <label className="block text-sm text-ink-200">Phone<input className={`${inputClass} mt-2`} name="phone" type="tel" inputMode="tel" autoComplete="tel" pattern={PHONE_PATTERN} title={PHONE_TITLE} placeholder="+91 98765 43210" required /></label>
                 <label className="block text-sm text-ink-200">Notes (optional)<textarea className={`${inputClass} mt-2`} name="notes" rows={3} maxLength={1000} /></label>
                 <label className="flex gap-2 text-sm text-ink-300"><input type="checkbox" required /> I agree to the privacy policy and terms.</label>
-                <button className="btn-gold w-full" disabled={submitting}>{submitting ? 'Taking you to PayU…' : service ? `Pay ${formatPrice(service)} & Book` : 'Pay & Book'}</button>
+                <button className="btn-gold w-full" disabled={submitting}>{submitting ? 'Reserving…' : 'Reserve Slot & Continue to Payment'}</button>
                 {error && <p className="text-red-600 text-sm" role="alert">{error}</p>}
-                <p className="text-xs text-ink-400">You'll pay on PayU's secure page. The slot is held for 10 minutes while you pay, and your booking is confirmed only after PayU confirms the payment to us.</p>
+                <p className="text-xs text-ink-400">Your slot is held for {PAYMENT_HOLD_MINUTES} minutes while you pay on PayU.</p>
               </div>
             </div>
           </form>}

@@ -1,13 +1,12 @@
 // Public booking endpoint used by the Services page.
 //  POST { action: 'availability', from, to }  -> live busy times from every connected Google Calendar
-//  POST { action: 'checkout', serviceTypeId, name, email, phone, notes, startsAt }
-//       -> re-checks both calendars live, holds the slot, and returns the signed PayU form
+//  POST { action: 'reserve', serviceTypeId, name, email, phone, notes, startsAt }
+//       -> re-checks both calendars live, then holds the slot while the customer pays via the PayU link
 // Deploy with: supabase functions deploy booking-checkout --no-verify-jwt
 // (public endpoint; it validates everything itself and never trusts prices from the browser).
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { accessToken, freeBusy, googleConfigured, type Interval } from '../_shared/google.ts';
-import { checkoutFields, payuConfig } from '../_shared/payu.ts';
 
 const SITE = (Deno.env.get('SITE_URL') || 'https://sthenofy.com').replace(/\/$/, '');
 const HOLD_MINUTES = 10;
@@ -63,10 +62,7 @@ Deno.serve(async (request) => {
       return json(200, { busy: await liveBusy(from, to) });
     }
 
-    if (input.action === 'checkout') {
-      const payu = payuConfig();
-      if (!payu) return json(503, { error: 'Online payment is not set up yet. Please contact us on WhatsApp to book.' });
-
+    if (input.action === 'reserve') {
       const name = String(input.name || '').trim().slice(0, 100);
       const email = String(input.email || '').trim().toLowerCase().slice(0, 254);
       const phone = String(input.phone || '').trim().slice(0, 20);
@@ -85,31 +81,17 @@ Deno.serve(async (request) => {
         return json(409, { error: 'That time has just been booked. Please choose another slot.' });
       }
 
-      // The database checks working-hour overlaps, synced busy times and other bookings, and copies the price.
-      const { data: booking, error } = await supabase.rpc('create_checkout_hold', {
+      // The database checks other bookings and synced busy times, copies the price and holds the slot
+      // (payment link booking: the customer gets the "pay now" email and submits their PayU transaction ID).
+      const { data: booking, error } = await supabase.rpc('create_booking', {
         p_service_type_id: service.id, p_customer_name: name, p_customer_email: email, p_starts_at: startsAt.toISOString(),
-        p_customer_phone: phone, p_notes: notes || null, p_hold_minutes: HOLD_MINUTES,
+        p_customer_phone: phone, p_notes: notes || null, p_hold_minutes: HOLD_MINUTES, p_user_id: null,
       });
       if (error) {
         const taken = error.code === '23P01' || /no longer available/i.test(error.message);
         return json(taken ? 409 : 400, { error: taken ? 'That time has just been booked. Please choose another slot.' : error.message });
       }
-
-      const txnid = `STH${booking.id.replace(/-/g, '').slice(0, 16)}${Date.now().toString(36)}`.toUpperCase();
-      const { error: txnError } = await supabase.from('bookings').update({ payment_transaction_id: txnid, updated_at: new Date().toISOString() }).eq('id', booking.id).eq('status', 'hold');
-      if (txnError) throw txnError;
-
-      const fields = await checkoutFields(payu, {
-        txnid,
-        amount: Number(booking.amount).toFixed(2),
-        productinfo: service.name.replace(/[|]/g, ' ').slice(0, 100),
-        firstname: name.split(/\s+/)[0].replace(/[|]/g, '').slice(0, 60),
-        email,
-        phone,
-        bookingId: booking.id,
-        returnUrl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
-      });
-      return json(200, { bookingId: booking.id, holdExpiresAt: booking.hold_expires_at, action: payu.checkoutUrl, fields });
+      return json(200, { booking });
     }
 
     return json(400, { error: 'Unknown action.' });

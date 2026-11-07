@@ -87,7 +87,12 @@ export interface AvailabilitySlot {
   localEnd: string;
 }
 
-export interface CheckoutInput {
+/** PayU payment link (no merchant key or salt). It cannot tell the website who paid, so the admin confirms payments. */
+export const PAYU_PAYMENT_LINK = 'https://u.payu.in/8rW2Lhb18XZD';
+/** How long a reservation is held while the customer pays. Short, so abandoned payments free the slot quickly. */
+export const PAYMENT_HOLD_MINUTES = 10;
+
+export interface ReserveInput {
   serviceTypeId: string;
   name: string;
   email: string;
@@ -104,29 +109,36 @@ async function functionError(error: unknown, fallback: string): Promise<Error> {
 }
 
 /**
- * Re-checks both Google Calendars, holds the slot for 10 minutes and returns the signed PayU form.
- * The price comes from the database; the browser never sends an amount.
+ * Re-checks both Google Calendars live, then holds the slot for PAYMENT_HOLD_MINUTES.
+ * The price is copied from the database; the browser never sends an amount.
  */
-export async function startCheckout(input: CheckoutInput): Promise<{ bookingId: string; action: string; fields: Record<string, string> }> {
-  const { data, error } = await requireSupabase().functions.invoke('booking-checkout', { body: { action: 'checkout', ...input } });
-  if (error) throw await functionError(error, 'Unable to start the payment.');
-  return data;
+export async function reserveSlot(input: ReserveInput): Promise<Booking> {
+  const { data, error } = await requireSupabase().functions.invoke<{ booking: Booking }>('booking-checkout', { body: { action: 'reserve', ...input } });
+  if (error) throw await functionError(error, 'Unable to reserve the slot.');
+  return data!.booking;
 }
 
-/** Sends the browser to PayU's secure checkout page. */
-export function submitToPayU(action: string, fields: Record<string, string>): void {
-  const form = document.createElement('form');
-  form.method = 'POST';
-  form.action = action;
-  for (const [name, value] of Object.entries(fields)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = name;
-    input.value = value;
-    form.appendChild(input);
-  }
-  document.body.appendChild(form);
-  form.submit();
+/**
+ * Records the customer's PayU transaction ID for the admin to verify; never marks the booking paid.
+ * Works after the hold lapsed too: 'slot_taken' means someone else booked the time meanwhile.
+ */
+export async function submitPaymentReference(bookingId: string, customerEmail: string, reference: string): Promise<'held' | 'slot_taken'> {
+  const { data, error } = await requireSupabase().rpc('submit_payment_reference', {
+    p_booking_id: bookingId,
+    p_customer_email: customerEmail,
+    p_reference: reference,
+  });
+  if (error) throw error;
+  return data === 'slot_taken' ? 'slot_taken' : 'held';
+}
+
+/** Frees the customer's own unpaid hold so the slot is available again straight away. */
+export async function releaseBookingHold(bookingId: string, customerEmail: string): Promise<void> {
+  const { error } = await requireSupabase().rpc('release_booking_hold', {
+    p_booking_id: bookingId,
+    p_customer_email: customerEmail,
+  });
+  if (error) throw error;
 }
 
 /** Live busy times from both Google Calendars (start/end only). Empty when the check is unavailable. */
@@ -134,24 +146,6 @@ export async function fetchLiveBusy(startsAt: string, endsAt: string): Promise<B
   const { data, error } = await requireSupabase().functions.invoke<{ busy: BookedInterval[] }>('booking-checkout', { body: { action: 'availability', from: startsAt, to: endsAt } });
   if (error) return [];
   return data?.busy ?? [];
-}
-
-export interface BookingStatusInfo {
-  status: BookingStatus;
-  payment_status: PaymentStatus;
-  starts_at: string;
-  ends_at: string;
-  service_name: string | null;
-  /** Only returned once the payment is verified. */
-  questionnaire_url: string | null;
-  needs_attention: boolean;
-}
-
-/** What the customer's browser shows after returning from PayU. */
-export async function fetchBookingStatus(bookingId: string): Promise<BookingStatusInfo | null> {
-  const { data, error } = await requireSupabase().rpc('get_booking_status', { p_booking_id: bookingId });
-  if (error) throw error;
-  return ((data ?? []) as BookingStatusInfo[])[0] ?? null;
 }
 
 /** The consultation fee when every active service costs the same, otherwise null. */
