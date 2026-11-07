@@ -56,19 +56,26 @@ Then `supabase/migrations/20261031000000_restrict_internal_functions.sql`, which
 
 The admin-slots migration adds `blocked` bookings (time the admin is unavailable), admin-created bookings, PayU payment-link bookings, a `bookings.amount` price snapshot that the database fills from `service_types`, and one-hour appointment blocks. Blocked time and confirmed/held bookings all show as **Booked** on the public calendar, and the database prevents any overlap between them.
 
-### PayU payment (payment link)
+### Customer booking and PayU payment (verified on the server)
 
-Customers pay through the static PayU payment link `https://u.payu.in/8rW2Lhb18XZD` (set in `PAYU_PAYMENT_LINK` in `src/lib/appointments.ts`). No merchant key or salt is used by the website.
+Migration `20261107000000_paid_checkout_and_dual_calendar.sql` (run after `20261101…` and `20261105…`).
 
-1. The customer picks a service (price from Supabase), a slot, and fills in their details.
-2. **Reserve Slot** calls `create_booking`, which holds the slot for 10 minutes (`PAYMENT_HOLD_MINUTES`) and saves the service price from the database in `bookings.amount`. The customer sees a countdown; an abandoned payment frees the slot when the hold ends, and **Book another slot** frees it immediately (`release_booking_hold`).
-3. **Pay Now** opens the PayU link in a new tab. Clicking it never changes payment status.
-4. After paying, the customer can submit their PayU transaction ID. This only records the reference and keeps the slot held for 24 hours; it does not mark anything paid. A reference submitted after the 10-minute hold ended is still recorded: the slot is taken back if it is still free, otherwise the booking shows as "Reservation expired · customer submitted payment" for you to reschedule or refund (migration `20261105000000_short_holds_and_release.sql`).
-5. The admin checks the payment in the PayU dashboard (amount, email, phone, transaction ID) and clicks **Confirm payment** in Admin → Bookings. Only then is the booking `confirmed / paid`.
+1. Services page → **Get Started** scrolls to **Book your consultation** with that service preselected (`/services/?service=diabetes` also works). The fee is shown under the heading: one price when every visible service costs the same, otherwise "from" the lowest price.
+2. The customer picks a service card, a date (times are checked live against both Google Calendars) and a time, and fills in their details.
+3. **Pay & Book** calls the `booking-checkout` Edge Function. It re-checks both calendars, holds the slot for 10 minutes (`create_checkout_hold`; the price comes from `service_types`, never from the browser) and returns a signed PayU form. The browser goes to PayU's checkout page.
+4. PayU posts the result to `payu-payment`, which checks the response hash, asks PayU's `verify_payment` API, and compares the amount with `bookings.amount`. Only then does `record_verified_payment` mark the booking paid. A failed or cancelled payment frees the slot at once.
+5. The `booking-worker` creates the event in every connected Google Calendar (one Meet link), stores both event IDs, and only then sets the booking to `confirmed`. That sends exactly one confirmation email (Meet link, .ics invitation, questionnaire link) and one "New booking (paid)" email to the admin.
+6. The customer's page waits for the confirmation, then redirects to the service's questionnaire.
 
-Limitation: a static payment link cannot receive the booking ID or the amount from the website, and PayU does not tell the website which booking a link payment belongs to. If the link has a fixed amount, every customer pays that amount whatever the service price is; if it lets the customer enter an amount, the customer could enter the wrong amount. That is why the admin compares the PayU payment with `bookings.amount` before confirming.
+If Google Calendar does not respond, the worker retries for about an hour; the booking shows under **Needs attention** in Admin → Bookings with **Confirm now**. A payment that arrives after the slot was retaken, or with the wrong amount, also shows there.
 
-The older merchant-key checkout (`supabase/functions/payu-payment`) is no longer called by the website. Its secrets stay only in Supabase Edge Function secrets. It can be removed with `supabase functions delete payu-payment` once you no longer need it.
+PayU secrets (Supabase → Edge Functions → Secrets): `PAYU_MERCHANT_KEY`, `PAYU_MERCHANT_SALT`, and `PAYU_ENVIRONMENT=production` for real payments (any other value uses PayU's test system). In the PayU dashboard, add the webhook URL `https://fmexlqqgdrdkboefeguk.supabase.co/functions/v1/payu-payment?source=webhook` for successful and failed payments, so a customer who closes the tab after paying is still confirmed.
+
+### Questionnaires (Google Forms)
+
+Admin → **Services & Pricing** → paste each service's Google Form link (`https://docs.google.com/forms/…` or `https://forms.gle/…`) and **Save**. It is stored in `service_types.questionnaire_url`. It is used for the redirect after confirmation, the confirmation email and the 24-hour reminder. A service without a link simply has no redirect.
+
+The old static payment link flow (`submit_payment_reference`, `release_booking_hold`) stays in the database for older bookings but the website no longer uses it.
 
 ## 3. Create the first admin
 
@@ -158,9 +165,12 @@ Setup order:
    ```powershell
    supabase functions deploy booking-worker --no-verify-jwt
    supabase functions deploy google-oauth --no-verify-jwt
+   supabase functions deploy google-calendar-webhook --no-verify-jwt
+   supabase functions deploy booking-checkout --no-verify-jwt
+   supabase functions deploy payu-payment --no-verify-jwt
    ```
 
-   Both check authorisation themselves (a database-generated secret, and the admin's session), which is why JWT verification is off.
+   Each checks authorisation itself (a database-generated secret, the admin's session, the Google channel token, or the PayU hash), and PayU and Google cannot send a Supabase JWT, which is why JWT verification is off.
 
 2. **Email (Resend):** create an account at resend.com, add the domain `sthenofy.com`, and add the DNS records Resend shows in Hostinger → DNS / Nameservers. Resend uses the `send` subdomain and a `resend._domainkey` record, so the Google Workspace MX and SPF records on the main domain are untouched. Create an API key.
 3. **Google Calendar:** signed in to Google Cloud Console with the Workspace account whose calendar should receive bookings:
@@ -178,7 +188,9 @@ Setup order:
    ```
 
 5. **Run the migration** in SQL Editor: `supabase/migrations/20261101000000_booking_notifications_and_google_calendar.sql`. It enables `pg_net` and `pg_cron` and schedules the worker. Bookings made before `RESEND_API_KEY` is set stay queued and are sent once it is.
-6. **Connect the calendar:** Admin → Bookings → **Connect Google Calendar**, and sign in with the Workspace account from step 3.
+6. **Connect both calendars:** Admin → Bookings → **Connect calendar 1**, sign in with the first account; then **Connect calendar 2** and sign in with the second account (the same account cannot be used twice). If the second account is not in the same Google Workspace, set the Google Auth Platform **Audience** to *External* and publish the app (In production); otherwise Google refuses the sign-in.
+
+**Two calendars:** a time is offered only when both calendars are free. Busy times are copied per calendar every 5 minutes and immediately when Google sends a push notification (`google-calendar-webhook`; channels are renewed automatically before their 7-day expiry). Right before a booking, and when a customer picks a date, both calendars are also checked live with the FreeBusy API. Events created by the website have IDs derived from the booking ID, so retries never create duplicates; their IDs are stored in `bookings.google_event_id` (calendar 1) and `google_event_id_2` (calendar 2). Rescheduling or cancelling in Admin moves or deletes both events. The website database is the source of truth for website bookings: editing a website event by hand in Google does not move the booking.
 
 Troubleshooting: Supabase → Edge Functions → `booking-worker` → Logs; failed events keep their error in `booking_events.last_error` (retried up to 5 times); Google problems are shown in the admin Bookings panel.
 

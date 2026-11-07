@@ -1,167 +1,78 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// PayU return URL (surl/furl) and PayU webhook. Verifies every payment on the server:
+//  1. the response hash (signed with the merchant salt, so it cannot be forged),
+//  2. PayU's verify_payment API (server to server) for the status and amount,
+//  3. the amount against the price the database saved on the booking.
+// Only then is the booking marked paid; the booking-worker then creates the Google Calendar
+// events and confirms it.
+//
+//  POST (browser, from PayU)        -> redirects to /services/?payment=...&booking=...
+//  POST ?source=webhook (PayU S2S)  -> 200 "ok" (covers customers who close the tab after paying)
+// Deploy with: supabase functions deploy payu-payment --no-verify-jwt (PayU cannot send a Supabase JWT).
 
-function getCorsHeaders(request: Request) {
-  const requestOrigin = request.headers.get('Origin') || '';
-  const configuredOrigin = Deno.env.get('PUBLIC_SITE_ORIGIN') || '';
-  const allowedOrigins = [
-    configuredOrigin,
-    'https://aelesahithi.github.io',
-    'http://localhost:5173',
-    'http://localhost:4173',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:4173',
-  ].filter(Boolean);
-  const origin = allowedOrigins.includes(requestOrigin)
-    ? requestOrigin
-    : configuredOrigin || 'https://aelesahithi.github.io';
-  return {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { payuConfig, responseHashValid, verifyTransaction } from '../_shared/payu.ts';
+
+const SITE = (Deno.env.get('SITE_URL') || 'https://sthenofy.com').replace(/\/$/, '');
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function backToSite(result: string, bookingId?: string) {
+  const params = new URLSearchParams({ payment: result });
+  if (bookingId && UUID.test(bookingId)) params.set('booking', bookingId);
+  return new Response(null, { status: 303, headers: { Location: `${SITE}/services/?${params}#appointment-booking` } });
 }
 
-const encoder = new TextEncoder();
+type Outcome = 'success' | 'pending' | 'failed' | 'invalid';
 
-async function sha512(value: string) {
-  const digest = await crypto.subtle.digest('SHA-512', encoder.encode(value));
-  return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
-}
+async function processPayment(form: FormData): Promise<{ outcome: Outcome; bookingId: string }> {
+  const config = payuConfig();
+  const txnid = String(form.get('txnid') || '');
+  const bookingId = String(form.get('udf1') || '');
+  if (!config || !txnid || !UUID.test(bookingId)) return { outcome: 'invalid', bookingId };
 
-function response(request: Request, status: number, body: Record<string, unknown>) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...getCorsHeaders(request), 'Content-Type': 'application/json' },
-  });
-}
+  if (!(await responseHashValid(config, form))) {
+    console.error(`PayU response hash mismatch for ${txnid}`);
+    return { outcome: 'invalid', bookingId };
+  }
 
-function htmlRedirect(origin: string, status: string, bookingId?: string) {
-  const path = Deno.env.get('PUBLIC_SITE_PATH') || '/Sthenofy/';
-  const target = `${origin}${path.replace(/\/?$/, '/')}services?payment=${encodeURIComponent(status)}${bookingId ? `&booking=${encodeURIComponent(bookingId)}` : ''}`;
-  return new Response(`<!doctype html><meta http-equiv="refresh" content="0;url=${target}"><script>location.replace(${JSON.stringify(target)})</script>`, {
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
-  });
+  // The hash proves the post came from PayU; the verify API is the final word on status and amount.
+  const verified = await verifyTransaction(config, txnid);
+  if (verified && verified.bookingId && verified.bookingId !== bookingId) {
+    console.error(`PayU verify: ${txnid} belongs to booking ${verified.bookingId}, not ${bookingId}`);
+    return { outcome: 'invalid', bookingId };
+  }
+  const status = verified?.status ?? String(form.get('status') || '').toLowerCase();
+  const amount = verified?.amount ?? Number(form.get('amount'));
+  const gatewayId = verified?.mihpayid || String(form.get('mihpayid') || '') || txnid;
+
+  if (status === 'success') {
+    const { data, error } = await supabase.rpc('record_verified_payment', {
+      p_booking_id: bookingId, p_txnid: txnid, p_gateway_id: gatewayId, p_amount: amount,
+    });
+    if (error) throw error;
+    console.log(`PayU ${txnid}: ${data}`);
+    // 'slot_taken' / 'amount_mismatch' are paid but need the admin; the customer sees a holding message.
+    return { outcome: data === 'paid' || data === 'already_paid' ? 'success' : 'pending', bookingId };
+  }
+  if (status === 'pending') return { outcome: 'pending', bookingId };
+
+  await supabase.rpc('record_failed_payment', { p_booking_id: bookingId, p_txnid: txnid });
+  return { outcome: 'failed', bookingId };
 }
 
 Deno.serve(async (request) => {
-  if (request.method === 'OPTIONS') return new Response('ok', { headers: getCorsHeaders(request) });
+  const isWebhook = new URL(request.url).searchParams.get('source') === 'webhook';
+  if (request.method !== 'POST') return isWebhook ? new Response('ok') : backToSite('failed');
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    );
-    const payuKey = Deno.env.get('PAYU_MERCHANT_KEY');
-    const payuSalt = Deno.env.get('PAYU_MERCHANT_SALT');
-    const siteOrigin = Deno.env.get('PUBLIC_SITE_ORIGIN') || new URL(request.url).origin;
-    if (!payuKey || !payuSalt) return response(request, 503, { error: 'PayU is not configured.' });
-
-    const isCheckoutRequest = request.method === 'POST'
-      && request.headers.get('content-type')?.includes('application/json');
-    if (isCheckoutRequest) {
-      const { bookingId } = await request.json();
-      if (!bookingId) return response(request, 400, { error: 'bookingId is required.' });
-      const { data: booking, error } = await supabase
-        .from('bookings')
-        .select('*, service_types(name, price, currency)')
-        .eq('id', bookingId)
-        .eq('status', 'hold')
-        .eq('payment_status', 'pending')
-        .single();
-      if (error || !booking) return response(request, 404, { error: 'Booking hold not found or expired.' });
-      if (booking.hold_expires_at && new Date(booking.hold_expires_at).getTime() <= Date.now()) {
-        await supabase.from('bookings').update({ status: 'expired', updated_at: new Date().toISOString() }).eq('id', bookingId);
-        return response(request, 409, { error: 'This booking hold has expired. Please select the slot again.' });
-      }
-      const txnid = `STH_${booking.id.replaceAll('-', '').slice(0, 20)}_${Date.now().toString(36)}`;
-      const amount = Number(booking.service_types.price).toFixed(2);
-      const productinfo = booking.service_types.name;
-      const firstname = booking.customer_name.trim().split(/\s+/)[0];
-      const udf1 = booking.id;
-      const udf2 = '';
-      const udf3 = '';
-      const udf4 = '';
-      const udf5 = '';
-      const udf6 = '';
-      const udf7 = '';
-      const udf8 = '';
-      const udf9 = '';
-      const udf10 = '';
-      const hashInput = [
-        payuKey,
-        txnid,
-        amount,
-        productinfo,
-        firstname,
-        booking.customer_email,
-        udf1,
-        udf2,
-        udf3,
-        udf4,
-        udf5,
-      ].join('|');
-      const hash = await sha512(`${hashInput}||||||${payuSalt}`);
-      const action = Deno.env.get('PAYU_ENVIRONMENT') === 'production'
-        ? 'https://secure.payu.in/_payment'
-        : 'https://test.payu.in/_payment';
-      const fields = {
-        key: payuKey,
-        txnid,
-        amount,
-        productinfo,
-        firstname,
-        email: booking.customer_email,
-        phone: booking.customer_phone || '',
-        surl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
-        furl: `${Deno.env.get('SUPABASE_URL')}/functions/v1/payu-payment`,
-        hash,
-        udf1,
-        udf2,
-        udf3,
-        udf4,
-        udf5,
-        udf6,
-        udf7,
-        udf8,
-        udf9,
-        udf10,
-      };
-      const { error: updateError } = await supabase.from('bookings').update({
-        payment_reference: txnid,
-        payment_transaction_id: txnid,
-        updated_at: new Date().toISOString(),
-      }).eq('id', booking.id).eq('status', 'hold');
-      if (updateError) return response(request, 500, { error: 'Unable to attach PayU transaction.' });
-      return response(request, 200, { action, fields });
-    }
-
-  if (request.method === 'POST' || request.method === 'GET') {
-    const form = request.method === 'POST'
-      ? await request.formData()
-      : new URL(request.url).searchParams;
-    const status = String(form.get('status') || 'failure');
-    const txnid = String(form.get('txnid') || '');
-    const bookingId = String(form.get('udf1') || '');
-    const receivedHash = String(form.get('hash') || '').toLowerCase();
-    const additionalCharges = String(form.get('additionalCharges') || '');
-    const udfValues = Array.from({ length: 10 }, (_, index) => String(form.get(`udf${10 - index}`) || ''));
-    const reverseHash = await sha512(`${additionalCharges ? `${additionalCharges}|` : ''}${payuSalt}|${status}|${udfValues.join('|')}|${String(form.get('email') || '')}|${String(form.get('firstname') || '')}|${String(form.get('productinfo') || '')}|${String(form.get('amount') || '')}|${txnid}|${payuKey}`);
-    const valid = receivedHash === reverseHash;
-    if (!valid || !txnid || !bookingId) return htmlRedirect(siteOrigin, 'failed');
-    const success = status === 'success';
-    await supabase.from('bookings').update({
-      status: success ? 'confirmed' : 'cancelled',
-      payment_status: success ? 'paid' : 'failed',
-      payment_transaction_id: txnid,
-      payment_reference: txnid,
-      updated_at: new Date().toISOString(),
-    }).eq('id', bookingId).eq('payment_transaction_id', txnid).eq('status', 'hold');
-    return htmlRedirect(siteOrigin, success ? 'success' : 'failed', bookingId);
-  }
-
-    return response(request, 405, { error: 'Method not allowed.' });
+    const form = await request.formData();
+    const { outcome, bookingId } = await processPayment(form);
+    if (isWebhook) return new Response(outcome === 'invalid' ? 'invalid' : 'ok', { status: outcome === 'invalid' ? 400 : 200 });
+    return backToSite(outcome, bookingId);
   } catch (error) {
-    console.error('PayU checkout request failed:', error);
-    return response(request, 500, { error: 'PayU checkout service failed. Check the Edge Function logs.' });
+    console.error('PayU response handling failed:', error);
+    // Ask PayU to retry the webhook; the customer is told we are checking the payment.
+    if (isWebhook) return new Response('error', { status: 500 });
+    return backToSite('pending');
   }
 });

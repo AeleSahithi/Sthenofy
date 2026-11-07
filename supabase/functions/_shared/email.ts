@@ -14,6 +14,8 @@ export interface MailBooking {
   meet_link: string | null;
   notes: string | null;
   service_name: string;
+  /** Google Form for this service (Admin -> Services & Pricing); null until the client provides it. */
+  questionnaire_url?: string | null;
 }
 
 const SITE = (Deno.env.get('SITE_URL') || 'https://sthenofy.com').replace(/\/$/, '');
@@ -88,6 +90,15 @@ const meetBlock = (b: MailBooking) => b.meet_link
   ? p(`Join on Google Meet: <a href="${b.meet_link}"><b>${b.meet_link}</b></a>`) + `<div style="margin:0 0 18px">${button(b.meet_link, 'Join Google Meet')}</div>`
   : p('Your coach will share the session link before the appointment.');
 
+/** Only links that are Google Forms are ever put in an email. */
+const safeForm = (url?: string | null) => url && /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/.test(url) ? url : null;
+const questionnaireBlock = (b: MailBooking) => {
+  const url = safeForm(b.questionnaire_url);
+  return url
+    ? p(`<b>Before your session:</b> please fill in your ${escapeHtml(b.service_name)} questionnaire so your coach can prepare.`) + `<div style="margin:0 0 18px">${button(url, 'Open questionnaire')}</div>`
+    : '';
+};
+
 export interface Email { to: string; subject: string; html: string; attachments?: { filename: string; content: string }[]; replyTo?: string }
 
 // --- Customer emails ---
@@ -100,7 +111,7 @@ export const reservedEmail = (b: MailBooking): Email => ({
 
 export const confirmedEmail = (b: MailBooking): Email => ({
   to: b.customer_email!, subject: `Confirmed: ${b.service_name} on ${formatDay(b.starts_at)}`,
-  html: layout('Your session is confirmed', p(`Hi ${escapeHtml(b.customer_name)}, you're all set. See you soon!`) + details(b) + meetBlock(b) + calendarLinks(b)),
+  html: layout('Your session is confirmed', p(`Hi ${escapeHtml(b.customer_name)}, you're all set. See you soon!`) + details(b) + meetBlock(b) + questionnaireBlock(b) + calendarLinks(b)),
   attachments: [icsFile(b)],
 });
 
@@ -120,7 +131,7 @@ export const cancelledEmail = (b: MailBooking, wasConfirmed: boolean): Email => 
 
 export const reminderEmail = (b: MailBooking, kind: '24h' | '1h'): Email => ({
   to: b.customer_email!, subject: kind === '24h' ? `Reminder: ${b.service_name} tomorrow` : `Starting in 1 hour: ${b.service_name}`,
-  html: layout(kind === '24h' ? 'Your session is coming up' : 'Your session starts in 1 hour', p(`Hi ${escapeHtml(b.customer_name)}, a quick reminder about your session.`) + details(b) + meetBlock(b)
+  html: layout(kind === '24h' ? 'Your session is coming up' : 'Your session starts in 1 hour', p(`Hi ${escapeHtml(b.customer_name)}, a quick reminder about your session.`) + details(b) + meetBlock(b) + (kind === '24h' ? questionnaireBlock(b) : '')
     + p('Need to change the time? Reply to this email or message us on WhatsApp.')),
 });
 
@@ -137,6 +148,12 @@ export const adminPaymentEmail = (b: MailBooking): Email => ({
   to: adminEmail(), replyTo: b.customer_email || undefined, subject: `Payment to verify: ${b.customer_name} · ${money(b)} · ref ${b.payment_reference || '—'}`,
   html: layout('Payment reference submitted', details(b, row('PayU ref', `<span style="font-family:monospace">${escapeHtml(b.payment_reference || '')}</span>`) + customerRows(b))
     + p(`Check this transaction in the PayU dashboard (amount <b>${money(b)}</b>), then click <b>Confirm payment</b> in the admin dashboard. The customer is emailed their confirmation automatically.`) + adminLink()),
+});
+
+export const adminPaidEmail = (b: MailBooking): Email => ({
+  to: adminEmail(), replyTo: b.customer_email || undefined, subject: `New booking (paid): ${b.customer_name} · ${formatWhen(b.starts_at, b.ends_at)}`,
+  html: layout('New booking · paid online', details(b, row('PayU txn', `<span style="font-family:monospace">${escapeHtml(b.payment_reference || '')}</span>`) + customerRows(b))
+    + p('PayU confirmed this payment to the server. The booking is in the connected Google Calendars and the customer has been sent their confirmation.') + adminLink()),
 });
 
 export async function sendEmail(email: Email): Promise<void> {

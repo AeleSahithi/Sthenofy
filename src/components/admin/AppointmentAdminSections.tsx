@@ -20,6 +20,7 @@ import {
   localDateTimeToIso,
   markBookingPaid,
   overlapsInterval,
+  QUESTIONNAIRE_URL_PATTERN,
   rescheduleBooking,
   saveServiceType,
   updateWorkingHours,
@@ -51,12 +52,21 @@ function bookingPrice(booking: AdminBooking) {
 function describeBooking(booking: AdminBooking) {
   if (booking.status === 'blocked') return { tone: 'border-red-400/40 bg-red-400/10 text-red-800', label: 'Blocked', detail: booking.customer_name };
   const who = `${booking.customer_name} · ${booking.service_types?.name || 'Service'}${bookingPrice(booking)}`;
+  if (booking.status === 'hold' && booking.payment_status === 'paid') return {
+    tone: 'border-gold-400/50 bg-gold-400/15 text-gold-800',
+    label: booking.calendar_sync_error ? 'Paid (verified by PayU) · waiting for Google Calendar' : 'Paid (verified by PayU) · confirming…',
+    detail: who,
+  };
   if (booking.status === 'hold') return {
     tone: 'border-yellow-400/40 bg-yellow-400/10 text-yellow-800',
     label: booking.payment_submitted_at ? 'Customer says paid · verify in PayU' : 'Awaiting payment',
     detail: `${who} · held until ${booking.hold_expires_at ? istDateTime(booking.hold_expires_at) : '—'}`,
   };
-  if (booking.status === 'expired') return { tone: 'border-ink-50/20 bg-ink-50/5 text-ink-200', label: 'Reservation expired · customer submitted payment', detail: who };
+  if (booking.status === 'expired') return {
+    tone: 'border-red-400/40 bg-red-400/10 text-red-800',
+    label: booking.payment_status === 'paid' ? 'Paid (verified by PayU) · slot no longer free · reschedule or refund' : 'Reservation expired · customer submitted payment',
+    detail: who,
+  };
   const paid = booking.payment_status === 'paid';
   return {
     tone: paid ? 'border-green-400/40 bg-green-400/10 text-green-800' : 'border-gold-400/40 bg-gold-400/10 text-gold-800',
@@ -67,9 +77,12 @@ function describeBooking(booking: AdminBooking) {
 
 type Draft = { kind: 'blocked' | 'booking'; startsAt: string };
 
-/** Connect/disconnect Google Calendar (events + Meet links for confirmed bookings, busy times block slots). */
+/**
+ * Connect/disconnect the two Google Calendar accounts. A customer slot is free only when every
+ * connected calendar is free, and every paid booking gets an event in each of them.
+ */
 function GoogleCalendarPanel({ onChange }: { onChange: () => void }) {
-  const [status, setStatus] = useState<GoogleConnectionStatus | null>(null);
+  const [connections, setConnections] = useState<GoogleConnectionStatus[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(() => {
@@ -77,38 +90,47 @@ function GoogleCalendarPanel({ onChange }: { onChange: () => void }) {
     const result = params.get('google');
     if (!result) return '';
     window.history.replaceState({}, '', window.location.pathname);
-    return result === 'connected' ? 'Google Calendar connected.' : `Google Calendar was not connected: ${params.get('reason') || 'cancelled'}`;
+    return result === 'connected' ? 'Google Calendar connected. Busy times sync within a minute.' : `Google Calendar was not connected: ${params.get('reason') || 'cancelled'}`;
   });
 
   const load = useCallback(async () => {
-    try { setStatus(await fetchGoogleStatus()); setState('ready'); } catch { setState('unavailable'); }
+    try { setConnections(await fetchGoogleStatus()); setState('ready'); } catch { setState('unavailable'); }
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  const connect = async () => {
+  const connect = async (slot: 1 | 2) => {
     setBusy(true);
     setNotice('');
-    try { await connectGoogleCalendar(); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to start Google sign-in.'); setBusy(false); }
+    try { await connectGoogleCalendar(slot); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to start Google sign-in.'); setBusy(false); }
   };
-  const disconnect = async () => {
-    if (!window.confirm('Disconnect Google Calendar? New bookings will no longer get calendar events or Meet links, and Google busy times stop blocking slots.')) return;
+  const disconnect = async (slot: 1 | 2) => {
+    if (!window.confirm(`Disconnect calendar ${slot}? New bookings will no longer be added to it, and its busy times stop blocking slots.`)) return;
     setBusy(true);
-    try { await disconnectGoogleCalendar(); await load(); onChange(); setNotice('Google Calendar disconnected.'); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to disconnect.'); } finally { setBusy(false); }
+    try { await disconnectGoogleCalendar(slot); await load(); onChange(); setNotice(`Calendar ${slot} disconnected.`); } catch (e) { setNotice(e instanceof Error ? e.message : 'Unable to disconnect.'); } finally { setBusy(false); }
   };
 
-  if (state === 'unavailable') return null; // Notifications migration not applied yet.
-  return <div className="rounded-xl border border-ink-50/10 p-4 flex flex-wrap items-center justify-between gap-3">
-    <div className="text-sm">
-      <p className="font-semibold">Google Calendar &amp; Meet</p>
-      {state === 'loading' ? <p className="text-ink-400">Checking...</p> : status
-        ? <p className="text-ink-300">Connected as <b>{status.email}</b>{status.last_busy_sync_at ? ` · busy times synced ${istTime(status.last_busy_sync_at)}` : ' · first sync within 10 minutes'}</p>
-        : <p className="text-ink-300">Not connected. Confirmed bookings won't get calendar events or Meet links.</p>}
-      {status?.last_error && <p className="text-red-600 text-xs mt-1">Last problem: {status.last_error}</p>}
-      {notice && <p className={`text-xs mt-1 ${notice.includes('not') || notice.includes('Unable') ? 'text-red-600' : 'text-green-700'}`}>{notice}</p>}
+  if (state === 'unavailable') return null; // Calendar migrations not applied yet.
+  return <div className="rounded-xl border border-ink-50/10 p-4 space-y-3">
+    <div>
+      <p className="font-semibold text-sm">Google Calendars &amp; Meet</p>
+      <p className="text-xs text-ink-400">A time is offered to customers only when both calendars are free. Every paid booking is added to both, with one Google Meet link.</p>
     </div>
-    {status
-      ? <button className="btn-outline px-3 py-1.5 text-xs" disabled={busy} onClick={() => void disconnect()}>Disconnect</button>
-      : <button className="btn-gold px-3 py-1.5 text-xs" disabled={busy || state === 'loading'} onClick={() => void connect()}>{busy ? 'Opening Google...' : 'Connect Google Calendar'}</button>}
+    {([1, 2] as const).map((slot) => {
+      const status = connections.find((item) => item.id === slot);
+      return <div key={slot} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-ink-50/10 p-3 text-sm">
+        <div className="min-w-0">
+          <p className="font-semibold">Calendar {slot}</p>
+          {state === 'loading' ? <p className="text-ink-400">Checking...</p> : status
+            ? <p className="text-ink-300 break-all">Connected as <b>{status.email}</b>{status.last_busy_sync_at ? ` · synced ${istTime(status.last_busy_sync_at)}` : ' · first sync within a minute'}{status.watch_expires_at ? ' · live updates on' : ''}</p>
+            : <p className="text-ink-300">Not connected.</p>}
+          {status?.last_error && <p className="text-red-600 text-xs mt-1">Last problem: {status.last_error}</p>}
+        </div>
+        {status
+          ? <button className="btn-outline px-3 py-1.5 text-xs" disabled={busy} onClick={() => void disconnect(slot)}>Disconnect</button>
+          : <button className="btn-gold px-3 py-1.5 text-xs" disabled={busy || state === 'loading'} onClick={() => void connect(slot)}>{busy ? 'Opening Google...' : `Connect calendar ${slot}`}</button>}
+      </div>;
+    })}
+    {notice && <p className={`text-xs ${notice.includes('not') || notice.includes('Unable') ? 'text-red-600' : 'text-green-700'}`}>{notice}</p>}
   </div>;
 }
 
@@ -161,7 +183,10 @@ export function BookingManager() {
   const offGridEntries = dayEntries.filter((booking) => !daySlots.some((slot) => overlapsInterval(slot, booking)));
   const upcoming = active.filter((booking) => new Date(booking.ends_at).getTime() > Date.now());
   // Customers who reported a PayU payment but whose reservation lapsed before it was verified.
-  const lapsedPaid = bookings.filter((booking) => booking.status === 'expired' && booking.payment_submitted_at && booking.payment_status === 'pending' && new Date(booking.starts_at).getTime() > Date.now());
+  // Also: verified PayU payments whose slot was no longer free, and paid bookings Google Calendar has not accepted yet.
+  const lapsedPaid = bookings.filter((booking) => new Date(booking.ends_at).getTime() > Date.now()
+    && (booking.status === 'hold' || booking.status === 'expired')
+    && (!!booking.calendar_sync_error || (booking.status === 'expired' && (booking.payment_status === 'paid' || (!!booking.payment_submitted_at && booking.payment_status === 'pending')))));
   const closedException = exceptions.find((item) => item.exception_date === selectedDate && item.is_closed);
 
   const run = async (action: () => Promise<void>, success: string, fallback: string) => {
@@ -228,16 +253,25 @@ export function BookingManager() {
     void run(() => markBookingPaid(booking.id, reference), 'Payment confirmed. The appointment is booked.', 'Unable to confirm payment.');
   };
 
+  // A verified payment that cannot be confirmed automatically (Google not responding, or the slot was retaken).
+  const confirmPaid = (booking: AdminBooking) => {
+    const warning = booking.status === 'expired'
+      ? 'Restore this paid booking at its current time? If the time is taken, reschedule it first.'
+      : 'Confirm this paid booking now without waiting for Google Calendar? The customer gets their confirmation email straight away and the calendar events are retried.';
+    if (window.confirm(warning)) void run(() => markBookingPaid(booking.id), 'Booking confirmed.', 'Unable to confirm booking.');
+  };
+
   const entryActions = (booking: AdminBooking) => <div className="flex flex-wrap gap-2">
     {booking.status !== 'blocked' && booking.payment_status !== 'paid' && <button className="btn-outline px-3 py-1.5 text-xs" disabled={saving} onClick={() => confirmPayment(booking)}>Confirm payment</button>}
-    {booking.status !== 'blocked' && booking.status !== 'expired' && <button className="btn-outline px-3 py-1.5 text-xs" disabled={saving} onClick={() => reschedule(booking)}>Reschedule</button>}
+    {booking.payment_status === 'paid' && (booking.status === 'hold' || booking.status === 'expired') && <button className="btn-gold px-3 py-1.5 text-xs" disabled={saving} onClick={() => confirmPaid(booking)}>{booking.status === 'expired' ? 'Restore booking' : 'Confirm now'}</button>}
+    {booking.status !== 'blocked' && (booking.status !== 'expired' || booking.payment_status === 'paid') && <button className="btn-outline px-3 py-1.5 text-xs" disabled={saving} onClick={() => reschedule(booking)}>Reschedule</button>}
     {booking.status !== 'expired' && <button className="btn-outline px-3 py-1.5 text-xs hover:border-red-500 hover:text-red-600" disabled={saving} onClick={() => cancel(booking)}>{booking.status === 'blocked' ? 'Unblock' : 'Cancel'}</button>}
   </div>;
 
   const entryRow = (booking: AdminBooking, time: string) => {
     const info = describeBooking(booking);
     return <div key={`${booking.id}-${time}`} className={`rounded-xl border p-3 flex flex-wrap items-center justify-between gap-3 ${info.tone}`}>
-      <div><p className="text-sm font-semibold">{time} · {info.label}</p><p className="text-xs opacity-80">{info.detail}{booking.customer_email ? ` · ${booking.customer_email}` : ''}{booking.customer_phone ? ` · ${booking.customer_phone}` : ''}</p>{booking.payment_reference && <p className="text-xs opacity-80 mt-1">Payment ref: {booking.payment_reference}</p>}{booking.meet_link && <p className="text-xs mt-1"><a href={booking.meet_link} target="_blank" rel="noopener noreferrer" className="underline">Google Meet link</a></p>}{booking.notes &&<p className="text-xs opacity-70 mt-1">Note: {booking.notes}</p>}</div>
+      <div><p className="text-sm font-semibold">{time} · {info.label}</p><p className="text-xs opacity-80">{info.detail}{booking.customer_email ? ` · ${booking.customer_email}` : ''}{booking.customer_phone ? ` · ${booking.customer_phone}` : ''}</p>{booking.payment_reference && <p className="text-xs opacity-80 mt-1">Payment ref: {booking.payment_reference}</p>}{booking.calendar_sync_error && <p className="text-xs mt-1 font-semibold">⚠ {booking.calendar_sync_error}</p>}{booking.status === 'confirmed' && <p className="text-xs opacity-70 mt-1">Calendar 1: {booking.google_event_id ? 'added' : '—'} · Calendar 2: {booking.google_event_id_2 ? 'added' : '—'}</p>}{booking.meet_link && <p className="text-xs mt-1"><a href={booking.meet_link} target="_blank" rel="noopener noreferrer" className="underline">Google Meet link</a></p>}{booking.notes &&<p className="text-xs opacity-70 mt-1">Note: {booking.notes}</p>}</div>
       {entryActions(booking)}
     </div>;
   };
@@ -306,8 +340,8 @@ export function BookingManager() {
     </div>
 
     {lapsedPaid.length > 0 && <div className="border-t border-ink-50/10 pt-6">
-      <h3 className="font-display text-xl mb-1">NEEDS PAYMENT CHECK</h3>
-      <p className="text-xs text-ink-400 mb-3">These customers submitted a PayU reference but their reservation expired before it was verified. Confirm if the payment is in PayU and the slot is still free.</p>
+      <h3 className="font-display text-xl mb-1">NEEDS ATTENTION</h3>
+      <p className="text-xs text-ink-400 mb-3">Payments that could not be confirmed automatically: Google Calendar is not responding, the customer paid after their slot was taken, or the PayU amount did not match. Check PayU, then confirm, reschedule or refund.</p>
       <div className="space-y-2">{lapsedPaid.map((booking) => entryRow(booking, istDateTime(booking.starts_at)))}</div>
     </div>}
 
@@ -344,11 +378,13 @@ export function ServicesManager() {
     const price = Number(service.price);
     if (!service.name.trim()) { setError('Service name is required.'); return; }
     if (!Number.isFinite(price) || price <= 0) { setError(`Enter a price above 0 for ${service.name}.`); return; }
+    const questionnaire = service.questionnaire_url?.trim() || null;
+    if (questionnaire && !QUESTIONNAIRE_URL_PATTERN.test(questionnaire)) { setError(`The questionnaire for ${service.name} must be a Google Form link (https://docs.google.com/forms/… or https://forms.gle/…).`); return; }
     setSavingId(service.id);
     setError('');
     setMessage('');
     try {
-      await saveServiceType({ name: service.name.trim(), description: service.description, price, is_active: service.is_active }, service.id);
+      await saveServiceType({ name: service.name.trim(), description: service.description, price, is_active: service.is_active, questionnaire_url: questionnaire }, service.id);
       setMessage(`${service.name.trim()} saved at ${formatMoney(price, service.currency)}. The Services page updates automatically.`);
       await load();
     } catch (e) {
@@ -379,7 +415,7 @@ export function ServicesManager() {
 
   return <section className="glass rounded-2xl p-5 sm:p-8">
     <h2 className="font-display text-3xl mb-2">SERVICES & PRICING</h2>
-    <p className="text-sm text-ink-400 mb-6">Prices are stored in Supabase and shown on the Services page. New bookings save the price at the time of booking.</p>
+    <p className="text-sm text-ink-400 mb-6">Prices are stored in Supabase and shown on the Services page. New bookings save the price at the time of booking. When every visible service has the same price, it is shown as the consultation fee. After a confirmed booking, the customer is sent to that service's questionnaire (Google Form) and gets the link in their confirmation email.</p>
     {message && <p className="text-green-700 mb-4">{message}</p>}
     {error && <p className="text-red-600 mb-4">{error}</p>}
     <div className="space-y-3">
@@ -389,6 +425,9 @@ export function ServicesManager() {
         <input className={inputClass} type="number" min="1" step="1" value={service.price} onChange={(e) => edit(service.id, { price: Number(e.target.value) })} aria-label={`${service.name} price`} />
         <label className="flex items-center gap-2 text-sm text-ink-300"><input type="checkbox" checked={service.is_active} onChange={(e) => edit(service.id, { is_active: e.target.checked })} /> {service.is_active ? 'Active' : 'Hidden'}</label>
         <button className="btn-outline px-3 py-2" disabled={savingId === service.id} onClick={() => void save(service)}>{savingId === service.id ? 'Saving...' : 'Save'}</button>
+        <label className="sm:col-span-4 flex flex-col gap-1 text-xs text-ink-400 sm:mb-3">Questionnaire (Google Form link){!service.questionnaire_url && <span className="text-gold-700">Not set: customers are not redirected to a form for this service yet.</span>}
+          <input className={inputClass} type="url" inputMode="url" placeholder="https://forms.gle/…" value={service.questionnaire_url ?? ''} onChange={(e) => edit(service.id, { questionnaire_url: e.target.value })} aria-label={`${service.name} questionnaire link`} />
+        </label>
       </div>)}
       {services.length === 0 && <p className="text-ink-300">No services yet.</p>}
     </div>

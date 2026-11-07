@@ -13,9 +13,14 @@ export interface ServiceType {
   price: number;
   currency: string;
   is_active: boolean;
+  /** Google Form the customer is sent to after a confirmed booking (set in Admin -> Services & Pricing). */
+  questionnaire_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+/** Questionnaire links must be Google Forms (the database enforces the same rule). */
+export const QUESTIONNAIRE_URL_PATTERN = /^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/;
 
 export interface WorkingHours {
   id: string;
@@ -58,9 +63,14 @@ export interface Booking {
   currency: string | null;
   hold_expires_at: string | null;
   confirmed_at?: string | null;
-  /** Google Calendar event and Meet link, set when Google Calendar is connected. */
+  /** Events in Google Calendar 1 and 2, and the Meet link, set once the calendars are updated. */
   google_event_id?: string | null;
+  google_event_id_2?: string | null;
   meet_link?: string | null;
+  /** Set when PayU confirmed the payment to the server. */
+  payment_verified_at?: string | null;
+  /** Why a paid booking still needs attention (calendar not updated, slot taken, amount mismatch). */
+  calendar_sync_error?: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -77,20 +87,81 @@ export interface AvailabilitySlot {
   localEnd: string;
 }
 
-export interface CreateBookingInput {
+export interface CheckoutInput {
   serviceTypeId: string;
-  customerName: string;
-  customerEmail: string;
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
   startsAt: string;
-  customerPhone?: string;
-  notes?: string;
-  holdMinutes?: number;
 }
 
-/** Static PayU payment link. It cannot receive a booking ID or amount from this site. */
-export const PAYU_PAYMENT_LINK = 'https://u.payu.in/8rW2Lhb18XZD';
-/** How long a customer's reservation is held while they pay via the link. Kept short so abandoned payments free the slot quickly. */
-export const PAYMENT_HOLD_MINUTES = 10;
+/** Turns a non-2xx Edge Function reply into an Error with its message. */
+async function functionError(error: unknown, fallback: string): Promise<Error> {
+  const context = (error as { context?: Response }).context;
+  const body = context && typeof context.json === 'function' ? await context.json().catch(() => null) : null;
+  return new Error(body?.error || (error instanceof Error ? error.message : fallback));
+}
+
+/**
+ * Re-checks both Google Calendars, holds the slot for 10 minutes and returns the signed PayU form.
+ * The price comes from the database; the browser never sends an amount.
+ */
+export async function startCheckout(input: CheckoutInput): Promise<{ bookingId: string; action: string; fields: Record<string, string> }> {
+  const { data, error } = await requireSupabase().functions.invoke('booking-checkout', { body: { action: 'checkout', ...input } });
+  if (error) throw await functionError(error, 'Unable to start the payment.');
+  return data;
+}
+
+/** Sends the browser to PayU's secure checkout page. */
+export function submitToPayU(action: string, fields: Record<string, string>): void {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = action;
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
+
+/** Live busy times from both Google Calendars (start/end only). Empty when the check is unavailable. */
+export async function fetchLiveBusy(startsAt: string, endsAt: string): Promise<BookedInterval[]> {
+  const { data, error } = await requireSupabase().functions.invoke<{ busy: BookedInterval[] }>('booking-checkout', { body: { action: 'availability', from: startsAt, to: endsAt } });
+  if (error) return [];
+  return data?.busy ?? [];
+}
+
+export interface BookingStatusInfo {
+  status: BookingStatus;
+  payment_status: PaymentStatus;
+  starts_at: string;
+  ends_at: string;
+  service_name: string | null;
+  /** Only returned once the payment is verified. */
+  questionnaire_url: string | null;
+  needs_attention: boolean;
+}
+
+/** What the customer's browser shows after returning from PayU. */
+export async function fetchBookingStatus(bookingId: string): Promise<BookingStatusInfo | null> {
+  const { data, error } = await requireSupabase().rpc('get_booking_status', { p_booking_id: bookingId });
+  if (error) throw error;
+  return ((data ?? []) as BookingStatusInfo[])[0] ?? null;
+}
+
+/** The consultation fee when every active service costs the same, otherwise null. */
+export function commonPrice(services: ServiceType[]): { amount: number; currency: string } | null {
+  if (!services.length) return null;
+  const first = services[0];
+  return services.every((item) => Number(item.price) === Number(first.price) && item.currency === first.currency)
+    ? { amount: Number(first.price), currency: first.currency }
+    : null;
+}
 
 export function formatMoney(amount: number, currency = 'INR'): string {
   return new Intl.NumberFormat('en-IN', { style: 'currency', currency, maximumFractionDigits: amount % 1 ? 2 : 0 }).format(amount);
@@ -194,43 +265,6 @@ export function getDaySlots(
   return [...slots.values()].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 }
 
-export async function createBooking(input: CreateBookingInput): Promise<Booking> {
-  const { data, error } = await requireSupabase().rpc('create_booking', {
-    p_service_type_id: input.serviceTypeId,
-    p_customer_name: input.customerName,
-    p_customer_email: input.customerEmail,
-    p_starts_at: input.startsAt,
-    p_customer_phone: input.customerPhone ?? null,
-    p_notes: input.notes ?? null,
-    p_hold_minutes: input.holdMinutes ?? PAYMENT_HOLD_MINUTES,
-  });
-  if (error) throw error;
-  return data as Booking;
-}
-
-/**
- * Records the customer's PayU transaction ID for admin verification; never marks the booking paid.
- * Works after the hold lapsed too: 'slot_taken' means someone else booked the time meanwhile.
- */
-export async function submitPaymentReference(bookingId: string, customerEmail: string, reference: string): Promise<'held' | 'slot_taken'> {
-  const { data, error } = await requireSupabase().rpc('submit_payment_reference', {
-    p_booking_id: bookingId,
-    p_customer_email: customerEmail,
-    p_reference: reference,
-  });
-  if (error) throw error;
-  return data === 'slot_taken' ? 'slot_taken' : 'held';
-}
-
-/** Frees the customer's own unpaid hold so the slot is available again straight away. */
-export async function releaseBookingHold(bookingId: string, customerEmail: string): Promise<void> {
-  const { error } = await requireSupabase().rpc('release_booking_hold', {
-    p_booking_id: bookingId,
-    p_customer_email: customerEmail,
-  });
-  if (error) throw error;
-}
-
 /** Admin: all services, including inactive ones (RLS only exposes those to admins). */
 export async function fetchAllServices(): Promise<ServiceType[]> {
   const { data, error } = await requireSupabase().from('service_types').select('*').order('name');
@@ -321,7 +355,10 @@ export async function createAdminSlot(input: AdminSlotInput): Promise<void> {
   if (error) throw friendlySlotError(error);
 }
 
-/** Admin: confirm a booking after verifying the payment in the PayU dashboard (or receiving cash/UPI). */
+/**
+ * Admin: confirm a booking after verifying the payment in the PayU dashboard (or receiving cash/UPI).
+ * Also used to confirm a paid booking straight away when Google Calendar is not responding.
+ */
 export async function markBookingPaid(id: string, reference?: string): Promise<void> {
   const { error } = await requireSupabase().from('bookings').update({
     status: 'confirmed',
@@ -379,17 +416,21 @@ export function getLocalAppointmentDate(date: Date): string {
 // --- Google Calendar (admin) ---
 
 export interface GoogleConnectionStatus {
+  /** Calendar slot: 1 or 2. */
+  id: number;
   email: string;
   connected_at: string;
   last_busy_sync_at: string | null;
   last_error: string | null;
+  /** When Google's push-notification channel expires (renewed automatically). */
+  watch_expires_at: string | null;
 }
 
-/** Admin: the connected Google account, or null when not connected. */
-export async function fetchGoogleStatus(): Promise<GoogleConnectionStatus | null> {
+/** Admin: the connected Google accounts (calendar 1 and 2). */
+export async function fetchGoogleStatus(): Promise<GoogleConnectionStatus[]> {
   const { data, error } = await requireSupabase().rpc('get_google_connection_status');
   if (error) throw error;
-  return ((data ?? []) as GoogleConnectionStatus[])[0] ?? null;
+  return (data ?? []) as GoogleConnectionStatus[];
 }
 
 /** Admin: busy times copied from Google Calendar (they block customer slots). */
@@ -400,13 +441,14 @@ export async function fetchCalendarBusy(): Promise<BookedInterval[]> {
 }
 
 /** Admin: sends the browser to Google's consent screen; Google returns to /admin?google=connected. */
-export async function connectGoogleCalendar(): Promise<void> {
-  const { data, error } = await requireSupabase().functions.invoke<{ url?: string; error?: string }>('google-oauth', { method: 'POST' });
-  if (error || !data?.url) throw new Error(data?.error || 'Google Calendar connection is not set up yet (see SETUP.md).');
+export async function connectGoogleCalendar(slot: 1 | 2): Promise<void> {
+  const { data, error } = await requireSupabase().functions.invoke<{ url?: string; error?: string }>('google-oauth', { method: 'POST', body: { slot } });
+  if (error) throw await functionError(error, 'Google Calendar connection is not set up yet (see SETUP.md).');
+  if (!data?.url) throw new Error(data?.error || 'Google Calendar connection is not set up yet (see SETUP.md).');
   window.location.assign(data.url);
 }
 
-export async function disconnectGoogleCalendar(): Promise<void> {
-  const { error } = await requireSupabase().rpc('disconnect_google_calendar');
+export async function disconnectGoogleCalendar(slot: 1 | 2): Promise<void> {
+  const { error } = await requireSupabase().rpc('disconnect_google_calendar', { p_id: slot });
   if (error) throw error;
 }

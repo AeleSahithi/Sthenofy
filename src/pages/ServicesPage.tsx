@@ -13,20 +13,25 @@ import NutritionforPCOD from '@/assets/Services/Nutrition for PCOD PCOS.webp';
 
 const serviceViews = ['All', 'Offline Services'] as const;
 
+// `match` is a word from the bookable service's name in Supabase, so "Get Started" preselects it.
 const classes = [
-  { name: 'Endurance Sports Nutrition', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: Endurancesportsnutrition },
-  { name: 'Nutrition for Diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: NutritionforDiabetes },
-  { name: 'Nutrition for PCOD/PCOS', category: 'Balance', desc: 'Personalized  plans to support hormonal health, healthier eating habits, and overall well-being.',  img: NutritionforPCOD },
-  { name: 'Nutrition for Fat Loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: fatLossImg },
-  { name: 'Pre-Peri & Menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause with expert guidance.', img: menopauseImg },
-  { name: 'Online Training Program', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: onlineTrainingImg },
+  { name: 'Endurance Sports Nutrition', match: 'endurance', category: 'Performance', desc: 'Personalized nutrition to fuel endurance training, support recovery, and improve performance.', img: Endurancesportsnutrition },
+  { name: 'Nutrition for Diabetes', match: 'diabetes', category: 'Health', desc: 'Practical nutrition guidance to support blood sugar management and healthier everyday habits.',  img: NutritionforDiabetes },
+  { name: 'Nutrition for PCOD/PCOS', match: 'pcod', category: 'Balance', desc: 'Personalized  plans to support hormonal health, healthier eating habits, and overall well-being.',  img: NutritionforPCOD },
+  { name: 'Nutrition for Fat Loss', match: 'fat loss', category: 'Weight Management', desc: 'Fat-loss nutrition coaching focused on balanced eating, sustainable weight management, and long-term progress. ',  img: fatLossImg },
+  { name: 'Pre-Peri & Menopause', match: 'menopause', category: 'Wellness', desc: 'Nutrition and lifestyle support tailored to changing needs through perimenopause and menopause with expert guidance.', img: menopauseImg },
+  { name: 'Online Training Program', match: 'online training', category: 'Strength', desc: 'Online personal training with customized workout plans and ongoing coaching to help you reach your fitness goals from anywhere.', img: onlineTrainingImg },
 ];
 
 export default function ClassesPage() {
   const [activeView, setActiveView] = useState<(typeof serviceViews)[number]>('All');
+  const [requestedService, setRequestedService] = useState<{ keyword: string; nonce: number }>();
   const whatsappLink = (location: string) =>
     buildWhatsappLink(`Hi Sthenofy, I am interested in offline training in ${location}. Please share the available timings and details.`);
-  const goToBooking = () => document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const goToBooking = (keyword: string) => {
+    setRequestedService({ keyword, nonce: Date.now() });
+    document.getElementById('appointment-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="noise-overlay min-h-screen pt-20">
@@ -83,7 +88,7 @@ export default function ClassesPage() {
                 <div className="p-6">
                   <h3 className="font-display text-2xl uppercase tracking-wide mb-2 group-hover:text-gold-400 transition-colors">{cls.name}</h3>
                   <p className="text-ink-300 text-sm leading-relaxed mb-4">{cls.desc}</p>
-                  <button onClick={goToBooking} className="w-full btn-outline text-xs py-3">
+                  <button onClick={() => goToBooking(cls.match)} className="w-full btn-outline text-xs py-3">
                     GET STARTED 
                   </button>
                 </div>
@@ -108,7 +113,7 @@ export default function ClassesPage() {
         </div>
       </section>
 
-      <AppointmentBooking />
+      <AppointmentBooking requestedService={requestedService} />
     </div>
   );
 }
