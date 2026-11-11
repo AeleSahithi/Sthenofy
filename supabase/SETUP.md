@@ -123,7 +123,7 @@ http://127.0.0.1:5173/admin
 
 ## 5. Hosting on Hostinger (https://sthenofy.com)
 
-The site is a static build uploaded to Hostinger's `public_html` by `.github/workflows/deploy.yml` on every push to `main`. DNS stays on Hostinger; email (Google Workspace MX/TXT records) is not affected.
+The site is a static build uploaded to Hostinger's `public_html`. Deploy from your computer with `npm run deploy` (builds, then uploads `dist/` over FTPS with `scripts/deploy.mjs`; it asks for the FTP password each time and never stores it). `.github/workflows/deploy.yml` does the same on every push to `main` when GitHub Actions is available. DNS stays on Hostinger; email (Google Workspace MX/TXT records) is not affected.
 
 `public/.htaccess` handles HTTPS + non-www redirects, 301 redirects from the old WordPress URLs, routing for app pages, and a real 404 status for unknown URLs.
 
